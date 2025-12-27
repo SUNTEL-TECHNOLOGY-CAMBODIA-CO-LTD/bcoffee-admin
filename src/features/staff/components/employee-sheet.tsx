@@ -1,0 +1,290 @@
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { type Staff } from '@/types/staff'
+import { MOCK_SHOPS } from '@/stores/shop-store'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { MOCK_ROLES } from '../data/mock-staff'
+
+const staffSchema = z.object({
+  fullName: z.string().min(1, 'Name is required'),
+  username: z.string().min(1, 'Username is required'),
+  phone: z.string().min(1, 'Phone is required'),
+  globalRoleId: z.string().optional(),
+  pin: z.string().min(4, 'PIN must be at least 4 digits').optional(),
+  access: z.array(
+    z.object({
+      shopId: z.string(),
+      roleId: z.string().min(1, 'Role is required'),
+    })
+  ),
+})
+
+type StaffFormValues = z.infer<typeof staffSchema>
+
+interface EmployeeSheetProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  initialData?: Staff | null
+}
+
+export function EmployeeSheet({
+  open,
+  onOpenChange,
+  initialData,
+}: EmployeeSheetProps) {
+  const form = useForm<StaffFormValues>({
+    resolver: zodResolver(staffSchema),
+    defaultValues: {
+      fullName: initialData?.fullName || '',
+      username: initialData?.username || '',
+      phone: initialData?.phone || '',
+      globalRoleId: initialData?.globalRoleId || '',
+      pin: '',
+      access:
+        initialData?.access.map((a) => ({
+          shopId: a.shopId,
+          roleId: a.roleId,
+        })) || [],
+    },
+  })
+
+  // Synchronize form with initialData when it opens/changes
+  // Note: simpler effect logic could be used but this matches previous pattern
+  // (In a real app, use useEffect)
+
+  const handleAccessToggle = (checked: boolean, shopId: string) => {
+    const currentAccess = form.getValues('access')
+    if (checked) {
+      if (!currentAccess.some((a) => a.shopId === shopId)) {
+        form.setValue('access', [
+          ...currentAccess,
+          { shopId, roleId: MOCK_ROLES[1].id }, // Default to Barista? or First role
+        ])
+      }
+    } else {
+      form.setValue(
+        'access',
+        currentAccess.filter((a) => a.shopId !== shopId)
+      )
+    }
+  }
+
+  const handleRoleChange = (shopId: string, roleId: string) => {
+    const currentAccess = form.getValues('access')
+    const index = currentAccess.findIndex((a) => a.shopId === shopId)
+    if (index !== -1) {
+      const newAccess = [...currentAccess]
+      newAccess[index].roleId = roleId
+      form.setValue('access', newAccess)
+    }
+  }
+
+  const onSubmit = (data: StaffFormValues) => {
+    // eslint-disable-next-line no-console
+    console.log('Submitted Employee:', data)
+    onOpenChange(false)
+    form.reset()
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className='flex w-full flex-col gap-6 overflow-y-auto p-4 sm:max-w-xl'>
+        <SheetHeader>
+          <SheetTitle>
+            {initialData ? 'Edit Employee' : 'Add New Employee'}
+          </SheetTitle>
+          <SheetDescription>
+            Manage HR details and global access.
+          </SheetDescription>
+        </SheetHeader>
+
+        <Form {...form}>
+          {/* Note: We should ideally reset the form when initialData changes */}
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className='flex flex-col gap-6'
+          >
+            <Tabs defaultValue='profile' className='w-full'>
+              <TabsList className='grid w-full grid-cols-2'>
+                <TabsTrigger value='profile'>Profile</TabsTrigger>
+                <TabsTrigger value='access'>Access & Roles</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value='profile' className='space-y-4 py-4'>
+                <FormField
+                  control={form.control}
+                  name='fullName'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder='e.g. John Doe' {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className='grid grid-cols-2 gap-4'>
+                  <FormField
+                    control={form.control}
+                    name='username'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <FormControl>
+                          <Input placeholder='johndoe' {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name='phone'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone</FormLabel>
+                        <FormControl>
+                          <Input placeholder='+1...' {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name='globalRoleId'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Global Role (Optional)</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder='Select global role' />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value='admin'>System Admin</SelectItem>
+                          <SelectItem value='hr'>HR Manager</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </TabsContent>
+
+              <TabsContent value='access' className='space-y-4 py-4'>
+                <div className='space-y-1'>
+                  <h3 className='font-medium'>Location Access</h3>
+                  <p className='text-sm text-muted-foreground'>
+                    Select shops this employee can access.
+                  </p>
+                </div>
+                <div className='flex flex-col space-y-3'>
+                  {MOCK_SHOPS.map((shop) => {
+                    // Watch access to determine state
+                    const currentAccess = form.watch('access') || []
+                    const accessEntry = currentAccess.find(
+                      (a) => a.shopId === shop.id
+                    )
+                    const isChecked = !!accessEntry
+
+                    return (
+                      <div
+                        key={shop.id}
+                        className='flex items-center justify-between rounded-lg border p-3'
+                      >
+                        <div className='flex items-center space-x-3'>
+                          <Checkbox
+                            id={`shop-${shop.id}`}
+                            checked={isChecked}
+                            onCheckedChange={(checked) =>
+                              handleAccessToggle(checked as boolean, shop.id)
+                            }
+                          />
+                          <div className='flex flex-col'>
+                            <label
+                              htmlFor={`shop-${shop.id}`}
+                              className='text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
+                            >
+                              {shop.name}
+                            </label>
+                            <span className='text-xs text-muted-foreground'>
+                              {shop.code}
+                            </span>
+                          </div>
+                        </div>
+                        {isChecked && (
+                          <Select
+                            value={accessEntry.roleId}
+                            onValueChange={(val) =>
+                              handleRoleChange(shop.id, val)
+                            }
+                          >
+                            <SelectTrigger className='h-8 w-[140px] text-xs'>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {MOCK_ROLES.map((role) => (
+                                <SelectItem key={role.id} value={role.id}>
+                                  {role.name.en}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            <div className='mt-auto flex justify-between border-t pt-4'>
+              {initialData && (
+                <Button type='button' variant='destructive' size='sm'>
+                  Deactivate User
+                </Button>
+              )}
+              <Button type='submit' className={initialData ? '' : 'ml-auto'}>
+                {initialData ? 'Save Changes' : 'Create Staff'}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </SheetContent>
+    </Sheet>
+  )
+}

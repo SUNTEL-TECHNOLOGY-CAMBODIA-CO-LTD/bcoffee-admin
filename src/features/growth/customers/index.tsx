@@ -1,0 +1,93 @@
+import { type ColumnDef } from '@tanstack/react-table'
+import { type Customer } from '@/types/growth'
+import { Eye } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { DataTable } from '@/components/custom/data-table'
+import { PageTitle } from '@/components/page-title'
+import { MOCK_CUSTOMERS } from '../data/mock-customers'
+
+export default function CustomersPage() {
+  const columns: ColumnDef<Customer>[] = [
+    {
+      accessorKey: 'fullName',
+      header: 'Customer',
+      cell: ({ row }) => (
+        <div className='flex items-center gap-3'>
+          <Avatar className='h-9 w-9'>
+            <AvatarImage
+              src={`https://api.dicebear.com/7.x/initials/svg?seed=${row.original.fullName}`}
+              alt={row.original.fullName}
+            />
+            <AvatarFallback>{row.original.fullName.charAt(0)}</AvatarFallback>
+          </Avatar>
+          <div className='flex flex-col'>
+            <span className='font-medium'>{row.original.fullName}</span>
+            <span className='text-xs text-muted-foreground'>
+              ID: {row.original.id}
+            </span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'phone',
+      header: 'Phone',
+      cell: ({ row }) => (
+        <span
+          className='cursor-pointer font-mono hover:underline'
+          onClick={() => {
+            navigator.clipboard.writeText(row.original.phone)
+          }}
+          title='Click to copy'
+        >
+          {row.original.phone}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({ row }) => {
+        const status = row.original.status
+        return (
+          <Badge
+            className={cn(
+              status === 'ACTIVE' && 'bg-green-500 hover:bg-green-600',
+              status === 'BANNED' && 'bg-red-500 hover:bg-red-600',
+              status === 'PENDING' && 'bg-orange-500 hover:bg-orange-600'
+            )}
+          >
+            {status}
+          </Badge>
+        )
+      },
+    },
+    {
+      accessorKey: 'createdAt',
+      header: 'Joined',
+      cell: ({ row }) => (
+        <span className='text-sm text-muted-foreground'>
+          {row.original.createdAt}
+        </span>
+      ),
+    },
+    {
+      id: 'actions',
+      cell: () => (
+        <Button variant='ghost' size='icon' title='View Details'>
+          <Eye className='h-4 w-4' />
+        </Button>
+      ),
+    },
+  ]
+
+  return (
+    <div className='flex flex-col gap-4 p-6 lg:gap-6 lg:p-6'>
+      <PageTitle title='Customers' />
+      <DataTable columns={columns} data={MOCK_CUSTOMERS} searchKey='fullName' />
+    </div>
+  )
+}

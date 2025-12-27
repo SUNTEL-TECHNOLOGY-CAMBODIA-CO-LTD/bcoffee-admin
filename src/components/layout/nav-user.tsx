@@ -83,6 +83,10 @@ export function NavUser({ user }: NavUserProps) {
                   <Sparkles />
                   Upgrade to Pro
                 </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Sparkles />
+                  Switch Business
+                </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
