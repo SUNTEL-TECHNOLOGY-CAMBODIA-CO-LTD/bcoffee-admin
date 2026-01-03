@@ -1,5 +1,6 @@
 import { type ColumnDef } from '@tanstack/react-table'
 import { MoreHorizontal, ImageIcon } from 'lucide-react'
+import { getTranslation } from '@/utils/i18n'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -22,7 +23,7 @@ const formatCurrency = (amount: number) => {
 
 const getCategoryName = (categoryId: string) => {
   const category = MOCK_CATEGORIES.find((c) => c.id === categoryId)
-  return category ? category.name.en : 'Unknown'
+  return category ? getTranslation(category.name) : 'Unknown'
 }
 
 export const columns: ColumnDef<Product>[] = [
@@ -36,7 +37,7 @@ export const columns: ColumnDef<Product>[] = [
           {url ? (
             <img
               src={url}
-              alt={row.original.name.en}
+              alt={getTranslation(row.original.name)}
               className='h-full w-full rounded object-cover'
             />
           ) : (
@@ -51,7 +52,7 @@ export const columns: ColumnDef<Product>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Name' />
     ),
-    cell: ({ row }) => row.original.name.en,
+    cell: ({ row }) => getTranslation(row.original.name),
   },
   {
     accessorKey: 'sku',

@@ -9,8 +9,8 @@ export enum OptionType {
 export const optionChoiceSchema = z.object({
   id: z.string().optional(), // Optional for new items
   sku: z.string().min(1, 'SKU is required'),
-  name: z.object({
-    en: z.string().min(1, 'Name is required'),
+  name: z.record(z.string(), z.string()).refine((data) => !!data['en'], {
+    message: 'English name is required',
   }),
   price: z.coerce.number().min(0, 'Price must be non-negative'),
 })
@@ -38,7 +38,8 @@ export enum ProductStatus {
 // Mock Category Type
 export interface Category {
   id: string
-  name: { en: string }
+  name: Record<string, string>
+  description?: Record<string, string>
   slug: string
   parentId?: string
   sortOrder: number
@@ -53,14 +54,10 @@ export type ProductRecipe = z.infer<typeof productRecipeSchema>
 
 export const productSchema = z.object({
   id: z.string().optional(),
-  name: z.object({
-    en: z.string().min(1, 'Product Name is required'),
+  name: z.record(z.string(), z.string()).refine((data) => !!data['en'], {
+    message: 'Product Name (EN) is required',
   }),
-  description: z
-    .object({
-      en: z.string().optional(),
-    })
-    .optional(),
+  description: z.record(z.string(), z.string()).optional(),
   sku: z.string().min(1, 'SKU is required'),
   price: z.coerce.number().min(0, 'Price must be non-negative'),
   categoryId: z.string().min(1, 'Category is required'),

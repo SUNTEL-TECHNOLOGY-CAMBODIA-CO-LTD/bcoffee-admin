@@ -1,6 +1,4 @@
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { PageTitle } from '@/components/page-title'
 import { BadgeSheet } from '../components/badge-sheet'
 import { BadgeTable } from '../components/badge-table'
@@ -41,17 +39,13 @@ export function BadgesPage() {
   }
 
   return (
-    <div className='flex h-full flex-col space-y-6 p-8'>
-      <div className='flex items-center justify-between'>
-        <PageTitle
-          title='Marketing Badges'
-          subtitle='Manage badges for product labeling (e.g., Best Seller, New, Spicy).'
-        />
-        <Button onClick={handleCreate}>
-          <Plus className='mr-2 h-4 w-4' />
-          Create Badge
-        </Button>
-      </div>
+    <div className='flex h-full flex-col space-y-6 p-6'>
+      <PageTitle
+        title='Marketing Badges'
+        subtitle='Manage badges for product labeling (e.g., Best Seller, New, Spicy).'
+        buttonLabel='Create Badge'
+        onClick={handleCreate}
+      />
 
       <BadgeTable data={badges} onEdit={handleEdit} onDelete={handleDelete} />
 

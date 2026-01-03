@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { SUPPORTED_LOCALES, DEFAULT_LOCALE } from '@/config/locales'
 import { useShopStore } from '@/stores/shop-store'
 import { showSubmittedData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
@@ -14,6 +15,13 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { PageTitle } from '@/components/page-title'
 
@@ -30,6 +38,7 @@ const storeProfileSchema = z.object({
   address: z.string().optional(),
   locationLat: z.coerce.number().optional(),
   locationLong: z.coerce.number().optional(),
+  defaultLanguage: z.string().optional().default(DEFAULT_LOCALE),
 })
 
 type StoreProfileValues = z.infer<typeof storeProfileSchema>
@@ -53,6 +62,7 @@ export default function StoreProfileForm() {
       address: activeShop?.address || '',
       locationLat: activeShop?.locationLat || 0,
       locationLong: activeShop?.locationLong || 0,
+      defaultLanguage: activeShop?.defaultLanguage || DEFAULT_LOCALE,
     },
     values: {
       // Use 'values' to reactively update form when activeShop changes
@@ -66,6 +76,7 @@ export default function StoreProfileForm() {
       address: activeShop?.address || '',
       locationLat: activeShop?.locationLat || 0,
       locationLong: activeShop?.locationLong || 0,
+      defaultLanguage: activeShop?.defaultLanguage || DEFAULT_LOCALE,
     },
   })
 
@@ -171,6 +182,38 @@ export default function StoreProfileForm() {
                     </FormControl>
                     <FormDescription>
                       Text representation of your operating hours.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='defaultLanguage'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Shop Default Language</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder='Select default language' />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {SUPPORTED_LOCALES.map((locale) => (
+                          <SelectItem key={locale.code} value={locale.code}>
+                            {locale.flag} {locale.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      This language will be used as the default fallback for
+                      this location.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

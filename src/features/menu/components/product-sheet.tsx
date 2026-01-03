@@ -30,7 +30,8 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Textarea } from '@/components/ui/textarea'
+import { MultiLangInput } from '@/components/custom/multi-lang-input'
+import { MultiLangTextarea } from '@/components/custom/multi-lang-textarea'
 import { MOCK_CATEGORIES } from '../data/mock-categories'
 import { MOCK_INGREDIENTS } from '../data/mock-ingredients'
 import { MOCK_OPTION_GROUPS } from '../data/mock-options'
@@ -115,12 +116,17 @@ export function ProductSheet({ open, onOpenChange }: ProductSheetProps) {
               <TabsContent value='general' className='space-y-4 py-4'>
                 <FormField
                   control={form.control}
-                  name='name.en'
+                  name='name'
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Product Name</FormLabel>
+                      {/* Label is handled inside MultiLangInput or we can keep it here */}
                       <FormControl>
-                        <Input placeholder='e.g. Latte' {...field} />
+                        <MultiLangInput
+                          label='Product Name'
+                          placeholder='e.g. Latte'
+                          value={field.value as Record<string, string>}
+                          onChange={field.onChange}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -183,7 +189,7 @@ export function ProductSheet({ open, onOpenChange }: ProductSheetProps) {
                           <SelectContent>
                             {MOCK_CATEGORIES.map((category) => (
                               <SelectItem key={category.id} value={category.id}>
-                                {category.name.en}
+                                {category.name['en']}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -223,14 +229,16 @@ export function ProductSheet({ open, onOpenChange }: ProductSheetProps) {
 
                 <FormField
                   control={form.control}
-                  name='description.en'
+                  name='description'
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description (Optional)</FormLabel>
+                      {/* Label handled inside or outside. Let's pass it in. */}
                       <FormControl>
-                        <Textarea
+                        <MultiLangTextarea
+                          label='Description (Optional)'
                           placeholder='Product description...'
-                          {...field}
+                          value={(field.value || {}) as Record<string, string>}
+                          onChange={field.onChange}
                         />
                       </FormControl>
                       <FormMessage />

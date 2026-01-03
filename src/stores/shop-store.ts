@@ -15,6 +15,7 @@ export interface Shop {
   address?: string
   locationLat?: number
   locationLong?: number
+  defaultLanguage?: string
 }
 
 interface ShopState {
@@ -41,6 +42,7 @@ export const MOCK_SHOPS: Shop[] = [
     address: '123 Coffee Street, Seattle, WA',
     locationLat: 47.6062,
     locationLong: -122.3321,
+    defaultLanguage: 'en',
   },
   {
     id: 'shop_02',
@@ -57,6 +59,7 @@ export const MOCK_SHOPS: Shop[] = [
     address: '456 Bean Avenue, Portland, OR',
     locationLat: 45.5152,
     locationLong: -122.6784,
+    defaultLanguage: 'en',
   },
 ]
 

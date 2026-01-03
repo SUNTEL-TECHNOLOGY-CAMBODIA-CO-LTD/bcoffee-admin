@@ -1,5 +1,6 @@
 import { type ColumnDef } from '@tanstack/react-table'
 import { Edit, MoreHorizontal, Trash } from 'lucide-react'
+import { getTranslation } from '@/utils/i18n'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -17,8 +18,9 @@ interface TableMeta {
 
 export const columns: ColumnDef<Category>[] = [
   {
-    accessorKey: 'name.en',
+    accessorKey: 'name',
     header: 'Name',
+    cell: ({ row }) => getTranslation(row.original.name),
   },
   {
     accessorKey: 'slug',
@@ -31,7 +33,7 @@ export const columns: ColumnDef<Category>[] = [
       const parentId = row.original.parentId
       if (!parentId) return <span className='text-muted-foreground'>-</span>
       const parent = MOCK_CATEGORIES.find((c) => c.id === parentId)
-      return parent ? parent.name.en : parentId
+      return parent ? getTranslation(parent.name) : parentId
     },
   },
   {

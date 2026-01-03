@@ -1,6 +1,6 @@
 export interface Category {
   id: string
-  name: { en: string }
+  name: Record<string, string>
   slug: string
   parentId?: string
   sortOrder: number
