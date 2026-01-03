@@ -66,6 +66,7 @@ export default function CollectionsPage() {
       <PageTitle
         title='Collections'
         subtitle='Create and manage product collections like "Trending Now" or "Specials".'
+        onClick={handleCreate}
       />
 
       <CollectionsTable
