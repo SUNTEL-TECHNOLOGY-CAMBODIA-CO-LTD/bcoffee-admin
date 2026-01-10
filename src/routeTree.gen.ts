@@ -11,7 +11,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ClerkRouteRouteImport } from './routes/clerk/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
@@ -20,12 +19,10 @@ import { Route as errors404RouteImport } from './routes/(errors)/404'
 import { Route as errors403RouteImport } from './routes/(errors)/403'
 import { Route as errors401RouteImport } from './routes/(errors)/401'
 import { Route as authSignUpRouteImport } from './routes/(auth)/sign-up'
-import { Route as authSignIn2RouteImport } from './routes/(auth)/sign-in-2'
-import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
 import { Route as authOtpRouteImport } from './routes/(auth)/otp'
+import { Route as authLogin2RouteImport } from './routes/(auth)/login-2'
+import { Route as authLoginRouteImport } from './routes/(auth)/login'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
-import { Route as ClerkAuthenticatedRouteRouteImport } from './routes/clerk/_authenticated/route'
-import { Route as ClerkauthRouteRouteImport } from './routes/clerk/(auth)/route'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as AuthenticatedInventoryRouteRouteImport } from './routes/_authenticated/inventory/route'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
@@ -35,9 +32,6 @@ import { Route as AuthenticatedInventoryIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
-import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
-import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
-import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
@@ -81,6 +75,9 @@ const AuthenticatedOperationsOrdersLazyRouteImport = createFileRoute(
 const AuthenticatedOperationsCartsLazyRouteImport = createFileRoute(
   '/_authenticated/operations/carts',
 )()
+const AuthenticatedMenuProductsLazyRouteImport = createFileRoute(
+  '/_authenticated/menu/products',
+)()
 const AuthenticatedMenuOptionsLazyRouteImport = createFileRoute(
   '/_authenticated/menu/options',
 )()
@@ -89,9 +86,6 @@ const AuthenticatedMenuCollectionsLazyRouteImport = createFileRoute(
 )()
 const AuthenticatedMenuCategoriesLazyRouteImport = createFileRoute(
   '/_authenticated/menu/categories',
-)()
-const AuthenticatedMenuCatalogLazyRouteImport = createFileRoute(
-  '/_authenticated/menu/catalog',
 )()
 const AuthenticatedMenuBadgesLazyRouteImport = createFileRoute(
   '/_authenticated/menu/badges',
@@ -123,11 +117,6 @@ const AuthenticatedGrowthReviewsIndexLazyRouteImport = createFileRoute(
 const AuthenticatedSettingsFinancialCashDrawersLazyRouteImport =
   createFileRoute('/_authenticated/settings/financial/cash-drawers')()
 
-const ClerkRouteRoute = ClerkRouteRouteImport.update({
-  id: '/clerk',
-  path: '/clerk',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -167,33 +156,25 @@ const authSignUpRoute = authSignUpRouteImport.update({
   path: '/sign-up',
   getParentRoute: () => rootRouteImport,
 } as any)
-const authSignIn2Route = authSignIn2RouteImport.update({
-  id: '/(auth)/sign-in-2',
-  path: '/sign-in-2',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const authSignInRoute = authSignInRouteImport.update({
-  id: '/(auth)/sign-in',
-  path: '/sign-in',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const authOtpRoute = authOtpRouteImport.update({
   id: '/(auth)/otp',
   path: '/otp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const authLogin2Route = authLogin2RouteImport.update({
+  id: '/(auth)/login-2',
+  path: '/login-2',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const authLoginRoute = authLoginRouteImport.update({
+  id: '/(auth)/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const authForgotPasswordRoute = authForgotPasswordRouteImport.update({
   id: '/(auth)/forgot-password',
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
-} as any)
-const ClerkAuthenticatedRouteRoute = ClerkAuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => ClerkRouteRoute,
-} as any)
-const ClerkauthRouteRoute = ClerkauthRouteRouteImport.update({
-  id: '/(auth)',
-  getParentRoute: () => ClerkRouteRoute,
 } as any)
 const AuthenticatedSettingsRouteRoute =
   AuthenticatedSettingsRouteRouteImport.update({
@@ -355,6 +336,14 @@ const AuthenticatedOperationsCartsLazyRoute =
       (d) => d.Route,
     ),
   )
+const AuthenticatedMenuProductsLazyRoute =
+  AuthenticatedMenuProductsLazyRouteImport.update({
+    id: '/menu/products',
+    path: '/menu/products',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/menu/products.lazy').then((d) => d.Route),
+  )
 const AuthenticatedMenuOptionsLazyRoute =
   AuthenticatedMenuOptionsLazyRouteImport.update({
     id: '/menu/options',
@@ -380,14 +369,6 @@ const AuthenticatedMenuCategoriesLazyRoute =
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any).lazy(() =>
     import('./routes/_authenticated/menu/categories.lazy').then((d) => d.Route),
-  )
-const AuthenticatedMenuCatalogLazyRoute =
-  AuthenticatedMenuCatalogLazyRouteImport.update({
-    id: '/menu/catalog',
-    path: '/menu/catalog',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any).lazy(() =>
-    import('./routes/_authenticated/menu/catalog.lazy').then((d) => d.Route),
   )
 const AuthenticatedMenuBadgesLazyRoute =
   AuthenticatedMenuBadgesLazyRouteImport.update({
@@ -451,22 +432,6 @@ const AuthenticatedGrowthAnnouncementsLazyRoute =
       (d) => d.Route,
     ),
   )
-const ClerkAuthenticatedUserManagementRoute =
-  ClerkAuthenticatedUserManagementRouteImport.update({
-    id: '/user-management',
-    path: '/user-management',
-    getParentRoute: () => ClerkAuthenticatedRouteRoute,
-  } as any)
-const ClerkauthSignUpRoute = ClerkauthSignUpRouteImport.update({
-  id: '/sign-up',
-  path: '/sign-up',
-  getParentRoute: () => ClerkauthRouteRoute,
-} as any)
-const ClerkauthSignInRoute = ClerkauthSignInRouteImport.update({
-  id: '/sign-in',
-  path: '/sign-in',
-  getParentRoute: () => ClerkauthRouteRoute,
-} as any)
 const AuthenticatedSettingsNotificationsRoute =
   AuthenticatedSettingsNotificationsRouteImport.update({
     id: '/notifications',
@@ -535,13 +500,12 @@ const AuthenticatedSettingsFinancialCashDrawersLazyRoute =
   )
 
 export interface FileRoutesByFullPath {
-  '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
   '/inventory': typeof AuthenticatedInventoryRouteRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
+  '/login': typeof authLoginRoute
+  '/login-2': typeof authLogin2Route
   '/otp': typeof authOtpRoute
-  '/sign-in': typeof authSignInRoute
-  '/sign-in-2': typeof authSignIn2Route
   '/sign-up': typeof authSignUpRoute
   '/401': typeof errors401Route
   '/403': typeof errors403Route
@@ -555,9 +519,6 @@ export interface FileRoutesByFullPath {
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
-  '/clerk/sign-in': typeof ClerkauthSignInRoute
-  '/clerk/sign-up': typeof ClerkauthSignUpRoute
-  '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/growth/announcements': typeof AuthenticatedGrowthAnnouncementsLazyRoute
   '/growth/customers': typeof AuthenticatedGrowthCustomersLazyRoute
   '/growth/loyalty': typeof AuthenticatedGrowthLoyaltyLazyRoute
@@ -565,10 +526,10 @@ export interface FileRoutesByFullPath {
   '/growth/vouchers': typeof AuthenticatedGrowthVouchersLazyRoute
   '/hq/overview': typeof AuthenticatedHqOverviewLazyRoute
   '/menu/badges': typeof AuthenticatedMenuBadgesLazyRoute
-  '/menu/catalog': typeof AuthenticatedMenuCatalogLazyRoute
   '/menu/categories': typeof AuthenticatedMenuCategoriesLazyRoute
   '/menu/collections': typeof AuthenticatedMenuCollectionsLazyRoute
   '/menu/options': typeof AuthenticatedMenuOptionsLazyRoute
+  '/menu/products': typeof AuthenticatedMenuProductsLazyRoute
   '/operations/carts': typeof AuthenticatedOperationsCartsLazyRoute
   '/operations/orders': typeof AuthenticatedOperationsOrdersLazyRoute
   '/operations/shift': typeof AuthenticatedOperationsShiftLazyRoute
@@ -593,11 +554,10 @@ export interface FileRoutesByFullPath {
   '/menu/availability': typeof AuthenticatedMenuAvailabilityIndexLazyRoute
 }
 export interface FileRoutesByTo {
-  '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
+  '/login': typeof authLoginRoute
+  '/login-2': typeof authLogin2Route
   '/otp': typeof authOtpRoute
-  '/sign-in': typeof authSignInRoute
-  '/sign-in-2': typeof authSignIn2Route
   '/sign-up': typeof authSignUpRoute
   '/401': typeof errors401Route
   '/403': typeof errors403Route
@@ -611,9 +571,6 @@ export interface FileRoutesByTo {
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
-  '/clerk/sign-in': typeof ClerkauthSignInRoute
-  '/clerk/sign-up': typeof ClerkauthSignUpRoute
-  '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/growth/announcements': typeof AuthenticatedGrowthAnnouncementsLazyRoute
   '/growth/customers': typeof AuthenticatedGrowthCustomersLazyRoute
   '/growth/loyalty': typeof AuthenticatedGrowthLoyaltyLazyRoute
@@ -621,10 +578,10 @@ export interface FileRoutesByTo {
   '/growth/vouchers': typeof AuthenticatedGrowthVouchersLazyRoute
   '/hq/overview': typeof AuthenticatedHqOverviewLazyRoute
   '/menu/badges': typeof AuthenticatedMenuBadgesLazyRoute
-  '/menu/catalog': typeof AuthenticatedMenuCatalogLazyRoute
   '/menu/categories': typeof AuthenticatedMenuCategoriesLazyRoute
   '/menu/collections': typeof AuthenticatedMenuCollectionsLazyRoute
   '/menu/options': typeof AuthenticatedMenuOptionsLazyRoute
+  '/menu/products': typeof AuthenticatedMenuProductsLazyRoute
   '/operations/carts': typeof AuthenticatedOperationsCartsLazyRoute
   '/operations/orders': typeof AuthenticatedOperationsOrdersLazyRoute
   '/operations/shift': typeof AuthenticatedOperationsShiftLazyRoute
@@ -651,15 +608,12 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/clerk': typeof ClerkRouteRouteWithChildren
   '/_authenticated/inventory': typeof AuthenticatedInventoryRouteRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
-  '/clerk/(auth)': typeof ClerkauthRouteRouteWithChildren
-  '/clerk/_authenticated': typeof ClerkAuthenticatedRouteRouteWithChildren
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
+  '/(auth)/login': typeof authLoginRoute
+  '/(auth)/login-2': typeof authLogin2Route
   '/(auth)/otp': typeof authOtpRoute
-  '/(auth)/sign-in': typeof authSignInRoute
-  '/(auth)/sign-in-2': typeof authSignIn2Route
   '/(auth)/sign-up': typeof authSignUpRoute
   '/(errors)/401': typeof errors401Route
   '/(errors)/403': typeof errors403Route
@@ -673,9 +627,6 @@ export interface FileRoutesById {
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
-  '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
-  '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
-  '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/_authenticated/growth/announcements': typeof AuthenticatedGrowthAnnouncementsLazyRoute
   '/_authenticated/growth/customers': typeof AuthenticatedGrowthCustomersLazyRoute
   '/_authenticated/growth/loyalty': typeof AuthenticatedGrowthLoyaltyLazyRoute
@@ -683,10 +634,10 @@ export interface FileRoutesById {
   '/_authenticated/growth/vouchers': typeof AuthenticatedGrowthVouchersLazyRoute
   '/_authenticated/hq/overview': typeof AuthenticatedHqOverviewLazyRoute
   '/_authenticated/menu/badges': typeof AuthenticatedMenuBadgesLazyRoute
-  '/_authenticated/menu/catalog': typeof AuthenticatedMenuCatalogLazyRoute
   '/_authenticated/menu/categories': typeof AuthenticatedMenuCategoriesLazyRoute
   '/_authenticated/menu/collections': typeof AuthenticatedMenuCollectionsLazyRoute
   '/_authenticated/menu/options': typeof AuthenticatedMenuOptionsLazyRoute
+  '/_authenticated/menu/products': typeof AuthenticatedMenuProductsLazyRoute
   '/_authenticated/operations/carts': typeof AuthenticatedOperationsCartsLazyRoute
   '/_authenticated/operations/orders': typeof AuthenticatedOperationsOrdersLazyRoute
   '/_authenticated/operations/shift': typeof AuthenticatedOperationsShiftLazyRoute
@@ -713,13 +664,12 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/clerk'
     | '/inventory'
     | '/settings'
     | '/forgot-password'
+    | '/login'
+    | '/login-2'
     | '/otp'
-    | '/sign-in'
-    | '/sign-in-2'
     | '/sign-up'
     | '/401'
     | '/403'
@@ -733,9 +683,6 @@ export interface FileRouteTypes {
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
-    | '/clerk/sign-in'
-    | '/clerk/sign-up'
-    | '/clerk/user-management'
     | '/growth/announcements'
     | '/growth/customers'
     | '/growth/loyalty'
@@ -743,10 +690,10 @@ export interface FileRouteTypes {
     | '/growth/vouchers'
     | '/hq/overview'
     | '/menu/badges'
-    | '/menu/catalog'
     | '/menu/categories'
     | '/menu/collections'
     | '/menu/options'
+    | '/menu/products'
     | '/operations/carts'
     | '/operations/orders'
     | '/operations/shift'
@@ -771,11 +718,10 @@ export interface FileRouteTypes {
     | '/menu/availability'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/clerk'
     | '/forgot-password'
+    | '/login'
+    | '/login-2'
     | '/otp'
-    | '/sign-in'
-    | '/sign-in-2'
     | '/sign-up'
     | '/401'
     | '/403'
@@ -789,9 +735,6 @@ export interface FileRouteTypes {
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
-    | '/clerk/sign-in'
-    | '/clerk/sign-up'
-    | '/clerk/user-management'
     | '/growth/announcements'
     | '/growth/customers'
     | '/growth/loyalty'
@@ -799,10 +742,10 @@ export interface FileRouteTypes {
     | '/growth/vouchers'
     | '/hq/overview'
     | '/menu/badges'
-    | '/menu/catalog'
     | '/menu/categories'
     | '/menu/collections'
     | '/menu/options'
+    | '/menu/products'
     | '/operations/carts'
     | '/operations/orders'
     | '/operations/shift'
@@ -828,15 +771,12 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_authenticated'
-    | '/clerk'
     | '/_authenticated/inventory'
     | '/_authenticated/settings'
-    | '/clerk/(auth)'
-    | '/clerk/_authenticated'
     | '/(auth)/forgot-password'
+    | '/(auth)/login'
+    | '/(auth)/login-2'
     | '/(auth)/otp'
-    | '/(auth)/sign-in'
-    | '/(auth)/sign-in-2'
     | '/(auth)/sign-up'
     | '/(errors)/401'
     | '/(errors)/403'
@@ -850,9 +790,6 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
     | '/_authenticated/settings/notifications'
-    | '/clerk/(auth)/sign-in'
-    | '/clerk/(auth)/sign-up'
-    | '/clerk/_authenticated/user-management'
     | '/_authenticated/growth/announcements'
     | '/_authenticated/growth/customers'
     | '/_authenticated/growth/loyalty'
@@ -860,10 +797,10 @@ export interface FileRouteTypes {
     | '/_authenticated/growth/vouchers'
     | '/_authenticated/hq/overview'
     | '/_authenticated/menu/badges'
-    | '/_authenticated/menu/catalog'
     | '/_authenticated/menu/categories'
     | '/_authenticated/menu/collections'
     | '/_authenticated/menu/options'
+    | '/_authenticated/menu/products'
     | '/_authenticated/operations/carts'
     | '/_authenticated/operations/orders'
     | '/_authenticated/operations/shift'
@@ -890,11 +827,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  ClerkRouteRoute: typeof ClerkRouteRouteWithChildren
   authForgotPasswordRoute: typeof authForgotPasswordRoute
+  authLoginRoute: typeof authLoginRoute
+  authLogin2Route: typeof authLogin2Route
   authOtpRoute: typeof authOtpRoute
-  authSignInRoute: typeof authSignInRoute
-  authSignIn2Route: typeof authSignIn2Route
   authSignUpRoute: typeof authSignUpRoute
   errors401Route: typeof errors401Route
   errors403Route: typeof errors403Route
@@ -905,13 +841,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/clerk': {
-      id: '/clerk'
-      path: '/clerk'
-      fullPath: '/clerk'
-      preLoaderRoute: typeof ClerkRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -968,25 +897,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authSignUpRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/(auth)/sign-in-2': {
-      id: '/(auth)/sign-in-2'
-      path: '/sign-in-2'
-      fullPath: '/sign-in-2'
-      preLoaderRoute: typeof authSignIn2RouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/(auth)/sign-in': {
-      id: '/(auth)/sign-in'
-      path: '/sign-in'
-      fullPath: '/sign-in'
-      preLoaderRoute: typeof authSignInRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/(auth)/otp': {
       id: '/(auth)/otp'
       path: '/otp'
       fullPath: '/otp'
       preLoaderRoute: typeof authOtpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)/login-2': {
+      id: '/(auth)/login-2'
+      path: '/login-2'
+      fullPath: '/login-2'
+      preLoaderRoute: typeof authLogin2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)/login': {
+      id: '/(auth)/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof authLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(auth)/forgot-password': {
@@ -995,20 +924,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/forgot-password'
       preLoaderRoute: typeof authForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/clerk/_authenticated': {
-      id: '/clerk/_authenticated'
-      path: ''
-      fullPath: '/clerk'
-      preLoaderRoute: typeof ClerkAuthenticatedRouteRouteImport
-      parentRoute: typeof ClerkRouteRoute
-    }
-    '/clerk/(auth)': {
-      id: '/clerk/(auth)'
-      path: ''
-      fullPath: '/clerk'
-      preLoaderRoute: typeof ClerkauthRouteRouteImport
-      parentRoute: typeof ClerkRouteRoute
     }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
@@ -1157,6 +1072,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOperationsCartsLazyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/menu/products': {
+      id: '/_authenticated/menu/products'
+      path: '/menu/products'
+      fullPath: '/menu/products'
+      preLoaderRoute: typeof AuthenticatedMenuProductsLazyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/menu/options': {
       id: '/_authenticated/menu/options'
       path: '/menu/options'
@@ -1176,13 +1098,6 @@ declare module '@tanstack/react-router' {
       path: '/menu/categories'
       fullPath: '/menu/categories'
       preLoaderRoute: typeof AuthenticatedMenuCategoriesLazyRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/menu/catalog': {
-      id: '/_authenticated/menu/catalog'
-      path: '/menu/catalog'
-      fullPath: '/menu/catalog'
-      preLoaderRoute: typeof AuthenticatedMenuCatalogLazyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/menu/badges': {
@@ -1233,27 +1148,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/growth/announcements'
       preLoaderRoute: typeof AuthenticatedGrowthAnnouncementsLazyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/clerk/_authenticated/user-management': {
-      id: '/clerk/_authenticated/user-management'
-      path: '/user-management'
-      fullPath: '/clerk/user-management'
-      preLoaderRoute: typeof ClerkAuthenticatedUserManagementRouteImport
-      parentRoute: typeof ClerkAuthenticatedRouteRoute
-    }
-    '/clerk/(auth)/sign-up': {
-      id: '/clerk/(auth)/sign-up'
-      path: '/sign-up'
-      fullPath: '/clerk/sign-up'
-      preLoaderRoute: typeof ClerkauthSignUpRouteImport
-      parentRoute: typeof ClerkauthRouteRoute
-    }
-    '/clerk/(auth)/sign-in': {
-      id: '/clerk/(auth)/sign-in'
-      path: '/sign-in'
-      fullPath: '/clerk/sign-in'
-      preLoaderRoute: typeof ClerkauthSignInRouteImport
-      parentRoute: typeof ClerkauthRouteRoute
     }
     '/_authenticated/settings/notifications': {
       id: '/_authenticated/settings/notifications'
@@ -1391,10 +1285,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGrowthVouchersLazyRoute: typeof AuthenticatedGrowthVouchersLazyRoute
   AuthenticatedHqOverviewLazyRoute: typeof AuthenticatedHqOverviewLazyRoute
   AuthenticatedMenuBadgesLazyRoute: typeof AuthenticatedMenuBadgesLazyRoute
-  AuthenticatedMenuCatalogLazyRoute: typeof AuthenticatedMenuCatalogLazyRoute
   AuthenticatedMenuCategoriesLazyRoute: typeof AuthenticatedMenuCategoriesLazyRoute
   AuthenticatedMenuCollectionsLazyRoute: typeof AuthenticatedMenuCollectionsLazyRoute
   AuthenticatedMenuOptionsLazyRoute: typeof AuthenticatedMenuOptionsLazyRoute
+  AuthenticatedMenuProductsLazyRoute: typeof AuthenticatedMenuProductsLazyRoute
   AuthenticatedOperationsCartsLazyRoute: typeof AuthenticatedOperationsCartsLazyRoute
   AuthenticatedOperationsOrdersLazyRoute: typeof AuthenticatedOperationsOrdersLazyRoute
   AuthenticatedOperationsShiftLazyRoute: typeof AuthenticatedOperationsShiftLazyRoute
@@ -1425,10 +1319,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGrowthVouchersLazyRoute: AuthenticatedGrowthVouchersLazyRoute,
   AuthenticatedHqOverviewLazyRoute: AuthenticatedHqOverviewLazyRoute,
   AuthenticatedMenuBadgesLazyRoute: AuthenticatedMenuBadgesLazyRoute,
-  AuthenticatedMenuCatalogLazyRoute: AuthenticatedMenuCatalogLazyRoute,
   AuthenticatedMenuCategoriesLazyRoute: AuthenticatedMenuCategoriesLazyRoute,
   AuthenticatedMenuCollectionsLazyRoute: AuthenticatedMenuCollectionsLazyRoute,
   AuthenticatedMenuOptionsLazyRoute: AuthenticatedMenuOptionsLazyRoute,
+  AuthenticatedMenuProductsLazyRoute: AuthenticatedMenuProductsLazyRoute,
   AuthenticatedOperationsCartsLazyRoute: AuthenticatedOperationsCartsLazyRoute,
   AuthenticatedOperationsOrdersLazyRoute:
     AuthenticatedOperationsOrdersLazyRoute,
@@ -1450,56 +1344,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
-interface ClerkauthRouteRouteChildren {
-  ClerkauthSignInRoute: typeof ClerkauthSignInRoute
-  ClerkauthSignUpRoute: typeof ClerkauthSignUpRoute
-}
-
-const ClerkauthRouteRouteChildren: ClerkauthRouteRouteChildren = {
-  ClerkauthSignInRoute: ClerkauthSignInRoute,
-  ClerkauthSignUpRoute: ClerkauthSignUpRoute,
-}
-
-const ClerkauthRouteRouteWithChildren = ClerkauthRouteRoute._addFileChildren(
-  ClerkauthRouteRouteChildren,
-)
-
-interface ClerkAuthenticatedRouteRouteChildren {
-  ClerkAuthenticatedUserManagementRoute: typeof ClerkAuthenticatedUserManagementRoute
-}
-
-const ClerkAuthenticatedRouteRouteChildren: ClerkAuthenticatedRouteRouteChildren =
-  {
-    ClerkAuthenticatedUserManagementRoute:
-      ClerkAuthenticatedUserManagementRoute,
-  }
-
-const ClerkAuthenticatedRouteRouteWithChildren =
-  ClerkAuthenticatedRouteRoute._addFileChildren(
-    ClerkAuthenticatedRouteRouteChildren,
-  )
-
-interface ClerkRouteRouteChildren {
-  ClerkauthRouteRoute: typeof ClerkauthRouteRouteWithChildren
-  ClerkAuthenticatedRouteRoute: typeof ClerkAuthenticatedRouteRouteWithChildren
-}
-
-const ClerkRouteRouteChildren: ClerkRouteRouteChildren = {
-  ClerkauthRouteRoute: ClerkauthRouteRouteWithChildren,
-  ClerkAuthenticatedRouteRoute: ClerkAuthenticatedRouteRouteWithChildren,
-}
-
-const ClerkRouteRouteWithChildren = ClerkRouteRoute._addFileChildren(
-  ClerkRouteRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  ClerkRouteRoute: ClerkRouteRouteWithChildren,
   authForgotPasswordRoute: authForgotPasswordRoute,
+  authLoginRoute: authLoginRoute,
+  authLogin2Route: authLogin2Route,
   authOtpRoute: authOtpRoute,
-  authSignInRoute: authSignInRoute,
-  authSignIn2Route: authSignIn2Route,
   authSignUpRoute: authSignUpRoute,
   errors401Route: errors401Route,
   errors403Route: errors403Route,

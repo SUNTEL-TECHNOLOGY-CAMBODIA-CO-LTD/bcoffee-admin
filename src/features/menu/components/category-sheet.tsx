@@ -1,6 +1,14 @@
+// ... existing imports ...
+import { useEffect } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
+import {
+  useCategories,
+  useCreateCategory,
+  useUpdateCategory,
+} from '@/hooks/queries/use-catalog'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -27,7 +35,7 @@ import {
 } from '@/components/ui/sheet'
 import { MultiLangInput } from '@/components/custom/multi-lang-input'
 import { MultiLangTextarea } from '@/components/custom/multi-lang-textarea'
-import { MOCK_CATEGORIES } from '../data/mock-categories'
+import { type Category } from '../data/schema'
 
 const categorySchema = z.object({
   name: z.record(z.string(), z.string()).refine((data) => !!data['en'], {
@@ -35,7 +43,7 @@ const categorySchema = z.object({
   }),
   description: z.record(z.string(), z.string()).optional(),
   slug: z.string().min(1, 'Slug is required'),
-  parentId: z.string().optional(),
+  parentId: z.string().nullable().optional(),
   sortOrder: z.coerce.number().default(0),
 })
 
@@ -47,11 +55,20 @@ interface CategorySheetProps {
   initialData?: CategoryFormValues | null
 }
 
+// ... imports
+
 export function CategorySheet({
   open,
   onOpenChange,
   initialData,
-}: CategorySheetProps) {
+}: CategorySheetProps & { initialData?: { id?: string } | null }) {
+  // Extend props to allow ID check
+  const { data: categories } = useCategories()
+  const { mutate: createCategory, isPending: isCreating } = useCreateCategory()
+  const { mutate: updateCategory, isPending: isUpdating } = useUpdateCategory()
+
+  const isPending = isCreating || isUpdating
+
   const form = useForm<
     z.input<typeof categorySchema>,
     unknown,
@@ -66,17 +83,62 @@ export function CategorySheet({
     },
   })
 
+  useEffect(() => {
+    if (open) {
+      form.reset(
+        initialData || {
+          name: { en: '' },
+          description: {},
+          slug: '',
+          sortOrder: 0,
+        }
+      )
+    }
+  }, [open, initialData, form])
+
   function onSubmit(data: CategoryFormValues) {
-    // eslint-disable-next-line no-console
-    console.log('Submitted Category:', data)
-    onOpenChange(false)
-    form.reset()
+    const categoryId = (initialData as { id?: string })?.id
+
+    // Sanitise payload: remove parentId if it's 'none' or falsy
+    const payload = { ...data }
+    if (payload.parentId === 'none' || !payload.parentId) {
+      delete payload.parentId
+    }
+
+    if (categoryId) {
+      updateCategory(
+        { id: categoryId, data: payload },
+        {
+          onSuccess: () => {
+            toast.success('Category updated successfully')
+            onOpenChange(false)
+            form.reset()
+          },
+          onError: (error) => {
+            toast.error('Failed to update category')
+            console.error(error)
+          },
+        }
+      )
+    } else {
+      createCategory(payload, {
+        onSuccess: () => {
+          toast.success('Category created successfully')
+          onOpenChange(false)
+          form.reset()
+        },
+        onError: (error) => {
+          toast.error('Failed to create category')
+          console.error(error)
+        },
+      })
+    }
   }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='p-4 sm:max-w-xl'>
-        <SheetHeader>
+        <SheetHeader className='p-0'>
           <SheetTitle>
             {initialData ? 'Edit Category' : 'Create Category'}
           </SheetTitle>
@@ -182,7 +244,7 @@ export function CategorySheet({
                   <FormLabel>Parent Category</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value || undefined}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -191,7 +253,7 @@ export function CategorySheet({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value='none'>None</SelectItem>
-                      {MOCK_CATEGORIES.map((category) => (
+                      {categories?.map((category: Category) => (
                         <SelectItem key={category.id} value={category.id}>
                           {category.name['en']}
                         </SelectItem>
@@ -204,8 +266,12 @@ export function CategorySheet({
             />
 
             <div className='flex justify-end pt-4'>
-              <Button type='submit'>
-                {initialData ? 'Update Category' : 'Create Category'}
+              <Button type='submit' disabled={isPending}>
+                {isPending
+                  ? 'Saving...'
+                  : initialData
+                    ? 'Update Category'
+                    : 'Create Category'}
               </Button>
             </div>
           </form>

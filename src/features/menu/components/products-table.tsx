@@ -1,12 +1,22 @@
 import { DataTable } from '@/components/custom/data-table'
-import { MOCK_PRODUCTS } from '../data/mock-products'
-import { columns } from './products-columns'
+import { type Product } from '../data/schema'
+import { getColumns, type ProductActions } from './products-columns'
 
-export function ProductsTable() {
+interface ProductsTableProps extends Partial<ProductActions> {
+  data: Product[]
+}
+
+export function ProductsTable({
+  data,
+  onEdit = () => {},
+  onDelete = () => {},
+}: ProductsTableProps) {
+  const columns = getColumns({ onEdit, onDelete })
+
   return (
     <DataTable
       columns={columns}
-      data={MOCK_PRODUCTS}
+      data={data}
       searchKey='name'
       searchPlaceholder='Filter products...'
     />

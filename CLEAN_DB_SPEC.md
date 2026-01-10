@@ -104,6 +104,13 @@
 - SYSTEM_ALERT
 - PROMOTION
 
+### InventoryAdjustmentReason
+
+- WASTE
+- RESTOCK
+- CORRECTION
+- DAMAGE
+
 ## Models
 
 ### AdminAuditLog
@@ -441,7 +448,7 @@
 | productId    | String   | @map("product_id") @db.Uuid                                   | Foreign Key (Product)    |
 | optionId     | String?  | @map("option_id") @db.Uuid                                    |                          |
 | ingredientId | String   | @map("ingredient_id") @db.Uuid                                | Foreign Key (Ingredient) |
-| quantity     | Decimal? | @map("quantity") @db.Decimal(10, 2)                           |                          |
+| quantity     | Decimal? | @map("quantity") @db.Decimal(10, 4)                           |                          |
 | createdAt    | DateTime | @default(now()) @map("created_at") @db.Timestamptz            |                          |
 | updatedAt    | DateTime | @default(now()) @updatedAt @map("updated_at") @db.Timestamptz |                          |
 
@@ -458,6 +465,19 @@
 | lastRestockedAt   | DateTime? | @map("last_restocked_at") @db.Timestamptz                     |                          |
 | createdAt         | DateTime  | @default(now()) @map("created_at") @db.Timestamptz            |                          |
 | updatedAt         | DateTime  | @default(now()) @updatedAt @map("updated_at") @db.Timestamptz |                          |
+
+### InventoryLog
+
+| Field          | Type                      | Attributes                                         | Description              |
+| -------------- | ------------------------- | -------------------------------------------------- | ------------------------ |
+| id             | String                    | @id @default(uuid(7)) @map("id") @db.Uuid          | Primary Key              |
+| shopId         | String                    | @map("shop_id") @db.Uuid                           | Foreign Key (Shop)       |
+| ingredientId   | String                    | @map("ingredient_id") @db.Uuid                     | Foreign Key (Ingredient) |
+| staffId        | String?                   | @map("staff_id") @db.Uuid                          | Foreign Key (Staff)      |
+| quantityChange | Decimal                   | @map("quantity_change") @db.Decimal(10, 4)         |                          |
+| reason         | InventoryAdjustmentReason | @map("reason")                                     | Enum                     |
+| note           | String?                   | @map("note")                                       |                          |
+| createdAt      | DateTime                  | @default(now()) @map("created_at") @db.Timestamptz |                          |
 
 ### Promotion
 
@@ -898,8 +918,8 @@
 | -------------- | -------------------------- | ------------------------------------------------------------- | ---------------------- |
 | id             | String                     | @id @default(uuid(7)) @map("id") @db.Uuid                     | Primary Key            |
 | businessId     | String                     | @map("business_id") @db.Uuid                                  | Foreign Key (Business) |
-| title          | String                     | @map("title") @db.VarChar(255)                                |                        |
-| content        | String                     | @map("content")                                               |                        |
+| title          | Json                       | @map("title")                                                 |                        |
+| content        | Json                       | @map("content")                                               |                        |
 | imageUrl       | String?                    | @map("image_url")                                             |                        |
 | targetAudience | AnnouncementTargetAudience | @map("target_audience")                                       | Enum                   |
 | priority       | AnnouncementPriority       | @default(NORMAL) @map("priority")                             | Enum                   |
@@ -914,8 +934,8 @@
 | --------- | ---------------- | ------------------------------------------------------------- | ------------------ |
 | id        | String           | @id @default(uuid(7)) @map("id") @db.Uuid                     | Primary Key        |
 | userId    | String           | @map("user_id") @db.Uuid                                      | Foreign Key (User) |
-| title     | String           | @map("title") @db.VarChar(255)                                |                    |
-| body      | String           | @map("body")                                                  |                    |
+| title     | Json             | @map("title")                                                 |                    |
+| body      | Json             | @map("body")                                                  |                    |
 | type      | NotificationType | @map("type")                                                  | Enum               |
 | metadata  | Json?            | @map("metadata")                                              |                    |
 | isRead    | Boolean          | @default(false) @map("is_read")                               |                    |

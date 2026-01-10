@@ -12,7 +12,7 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { SignOutDialog } from '@/components/sign-out-dialog'
+import { LogoutDialog } from '@/components/logout-dialog'
 
 export function ProfileDropdown() {
   const [open, setOpen] = useDialogState()
@@ -61,7 +61,7 @@ export function ProfileDropdown() {
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem variant='destructive' onClick={() => setOpen(true)}>
-            Sign out
+            Logout
             <DropdownMenuShortcut className='text-current'>
               ⇧⌘Q
             </DropdownMenuShortcut>
@@ -69,7 +69,7 @@ export function ProfileDropdown() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <SignOutDialog open={!!open} onOpenChange={setOpen} />
+      <LogoutDialog open={!!open} onOpenChange={setOpen} />
     </>
   )
 }

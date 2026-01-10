@@ -1,6 +1,6 @@
 import { hqNav, storeNav } from '@/config/nav'
-import { useShopStore } from '@/stores/shop-store'
 import { useLayout } from '@/context/layout-provider'
+import { useAppStore } from '@/hooks/use-app-store'
 import {
   Sidebar,
   SidebarContent,
@@ -16,7 +16,16 @@ import { ShopSwitcher } from './shop-switcher'
 
 export function AppSidebar() {
   const { collapsible, variant } = useLayout()
-  const { shopId } = useShopStore()
+  const { activeShopId, user } = useAppStore()
+
+  // Map Staff object to NavUser expected format
+  const navUser = user
+    ? {
+        name: user.fullName || user.username,
+        email: user.username,
+        avatar: '', // Add avatar to Staff if available, else empty
+      }
+    : sidebarData.user
 
   return (
     <Sidebar collapsible={collapsible} variant={variant}>
@@ -26,7 +35,7 @@ export function AppSidebar() {
       <SidebarContent>
         {/* Store Operations Group */}
         <NavGroup
-          title={`Store: ${shopId || 'Select Shop'}`}
+          title={`Store: ${activeShopId || 'Select Shop'}`}
           items={storeNav}
         />
 
@@ -36,7 +45,7 @@ export function AppSidebar() {
         <NavGroup title='Head Office' items={hqNav} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={sidebarData.user} />
+        <NavUser user={navUser} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

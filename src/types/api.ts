@@ -1,0 +1,246 @@
+// Shared Types
+export type LocalizedText = Record<string, string>
+
+export interface PaginationMeta {
+  itemCount: number
+  totalItems: number
+  itemsPerPage: number
+  totalPages: number
+  currentPage: number
+}
+
+// Enums (from DB Spec)
+export enum OrderStatus {
+  PENDING = 'PENDING',
+  CONFIRMED = 'CONFIRMED',
+  PREPARING = 'PREPARING',
+  READY = 'READY',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum UserStatus {
+  PENDING = 'PENDING',
+  ACTIVE = 'ACTIVE',
+  BANNED = 'BANNED',
+}
+
+export enum PaymentStatus {
+  INITIATED = 'INITIATED',
+  PENDING_USER_ACTION = 'PENDING_USER_ACTION',
+  SUCCESS = 'SUCCESS',
+  FAILED = 'FAILED',
+  REFUNDED = 'REFUNDED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum OptionType {
+  VARIANT = 'VARIANT',
+  MODIFIER = 'MODIFIER',
+  ADDON = 'ADDON',
+}
+
+export enum InventoryAdjustmentReason {
+  WASTE = 'WASTE',
+  RESTOCK = 'RESTOCK',
+  CORRECTION = 'CORRECTION',
+  DAMAGE = 'DAMAGE',
+}
+
+// DTOs (from API Spec)
+
+// Auth
+export interface StaffLoginRequest {
+  username: string
+  password: string
+}
+
+export type LoginResponse = StaffLoginResponse
+
+export interface StaffLoginResponse {
+  accessToken: string
+  user: Staff
+}
+
+export interface ChangePasswordRequest {
+  oldPassword: string
+  newPassword: string
+}
+
+// Catalog
+export interface CreateCategoryRequest {
+  name: LocalizedText
+  slug: string
+  description?: LocalizedText
+}
+
+export type UpdateCategoryRequest = Partial<CreateCategoryRequest>
+
+// Products
+export interface CreateProductRequest {
+  name: LocalizedText
+  sku: string
+  basePrice: number
+  categoryId: string
+  description?: LocalizedText
+  collectionIds?: string[]
+  optionGroupIds?: string[]
+  imageUrl?: LocalizedText
+}
+
+export interface Product {
+  id: string
+  name: LocalizedText
+  sku: string
+  price: number
+  status: string // ProductStatus enum in DB spec
+  categoryId: string
+  optionGroupIds?: string[] // M:N relationship
+  imageUrl?: LocalizedText
+  createdAt: string
+  updatedAt: string
+  // Add other fields as needed from response
+}
+
+export interface ProductFilters {
+  page?: number
+  limit?: number
+  search?: string
+  categoryId?: string
+  status?: string
+  collectionIds?: string[]
+}
+
+// Option Groups
+export interface OptionGroup {
+  id: string
+  name: LocalizedText
+  type: OptionType
+  sku: string
+  minSelect: number
+  maxSelect: number
+  _count?: {
+    products: number
+    choices: number
+  }
+  choices?: OptionChoice[] // Returned in list view now
+}
+
+export interface OptionChoice {
+  id?: string
+  sku: string
+  name: LocalizedText
+  price: number
+}
+
+// Orders
+export interface Order {
+  id: string
+  invoiceCode: string
+  status: OrderStatus
+  subtotal: number
+  grandTotal: number
+  createdAt: string
+  items: OrderItem[]
+  // ... more fields
+}
+
+export interface OrderItem {
+  id: string
+  productName: LocalizedText
+  quantity: number
+  unitPrice: number
+  subtotal: number
+  // ...
+}
+
+export interface GetOrdersFilters {
+  page?: number
+  limit?: number
+  shopId?: string
+  status?: OrderStatus
+  startDate?: string
+  endDate?: string
+  search?: string
+}
+
+export interface UpdateOrderStatusRequest {
+  status: OrderStatus
+}
+
+// Inventory / Ops
+export interface InventoryItem {
+  id: string
+  ingredientId: string
+  shopId: string
+  currentStock: number
+  lowStockThreshold: number
+  ingredient: {
+    id: string
+    name: LocalizedText
+    sku: string
+    unitId: string
+  }
+}
+
+export interface AdjustStockRequest {
+  shopId: string
+  ingredientId: string
+  quantityChange: number
+  reason: InventoryAdjustmentReason
+  note?: string
+}
+
+// Staff
+export interface Start {
+  id: string
+  username: string
+  fullName: string
+  globalRoleId?: string
+}
+
+export interface Shop {
+  id: string
+  name: LocalizedText
+  address: string
+  phone: string
+  code: string
+}
+
+export interface Staff {
+  id: string
+  username: string
+  fullName: string
+  globalRoleId?: string // Optional global role
+  shopId?: string // Optional current shop context (if applicable)
+}
+
+export interface CreateStaffRequest {
+  username: string
+  fullName: string
+  password: string
+  pin: string
+  phone: string
+  globalRoleId?: string
+}
+
+export interface AssignShopAccessRequest {
+  shopId: string
+  roleId?: string
+}
+
+// Admin / Business
+export interface BusinessProfile {
+  id: string
+  name: LocalizedText
+  supportEmail?: string
+  logoUrl?: string
+  bannerImageUrl?: LocalizedText // Spec says Json? for bannerImageUrl, likely Localized or string. Database spec says Json?. API spec says UpdateBusinessProfileDto bannerImageUrl is string. I'll use string | LocalizedText or just string based on API DTO. API DTO says string.
+}
+
+export interface UpdateBusinessProfileRequest {
+  name?: LocalizedText
+  supportEmail?: string
+  logoUrl?: string
+  bannerImageUrl?: string
+}

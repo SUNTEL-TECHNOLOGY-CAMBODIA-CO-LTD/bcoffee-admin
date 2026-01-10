@@ -1,11 +1,32 @@
+import { useEffect } from 'react'
 import { type z } from 'zod'
 import { useForm, useFieldArray, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import {
+  type OptionGroup,
+  type OptionChoice,
+  type CreateProductRequest,
+} from '@/types/api'
+import _ from 'lodash'
+import { ChevronRight } from 'lucide-react'
+import { toast } from 'sonner'
 import { calculateRecipeCost, calculateMargin } from '@/utils/cost-engine'
+import { formatCurrency } from '@/utils/format'
+import {
+  useCategories,
+  useCreateProduct,
+  useUpdateProduct,
+  useOptionGroups,
+} from '@/hooks/queries/use-catalog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import {
   Form,
   FormControl,
@@ -30,33 +51,99 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { MultiLangImageUpload } from '@/components/custom/multi-lang-image-upload'
 import { MultiLangInput } from '@/components/custom/multi-lang-input'
 import { MultiLangTextarea } from '@/components/custom/multi-lang-textarea'
-import { MOCK_CATEGORIES } from '../data/mock-categories'
 import { MOCK_INGREDIENTS } from '../data/mock-ingredients'
-import { MOCK_OPTION_GROUPS } from '../data/mock-options'
-import { productSchema, ProductStatus, type Product } from '../data/schema'
+// import { MOCK_OPTION_GROUPS } from '../data/mock-options'
+import {
+  type Category,
+  productSchema,
+  ProductStatus,
+  type Product,
+} from '../data/schema'
+
+function OptionGroupDetails({ group }: { group: OptionGroup }) {
+  if (!group?.choices?.length) {
+    return (
+      <div className='py-2 text-sm text-muted-foreground'>
+        No choices found.
+      </div>
+    )
+  }
+
+  return (
+    <div className='grid gap-2 py-2'>
+      <div className='mb-1 grid grid-cols-2 text-xs font-medium text-muted-foreground'>
+        <span>Choice Name</span>
+        <span className='text-right'>Price</span>
+      </div>
+      {group.choices.map((option: OptionChoice) => (
+        <div key={option.id || option.sku} className='grid grid-cols-2 text-sm'>
+          <span>{option.name['en'] || 'Untitled'}</span>
+          <span className='text-right font-mono'>
+            {option.price > 0 ? `${formatCurrency(option.price)}` : '-'}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 interface ProductSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  product?: Product | null // Adding product prop for edit mode
 }
 
-export function ProductSheet({ open, onOpenChange }: ProductSheetProps) {
+export function ProductSheet({
+  open,
+  onOpenChange,
+  product,
+}: ProductSheetProps) {
+  const { data: categories } = useCategories()
+  const { data: optionGroups } = useOptionGroups()
+  const { mutate: createProduct, isPending: isCreating } = useCreateProduct()
+  const { mutate: updateProduct, isPending: isUpdating } = useUpdateProduct()
+
+  // Removed unused isPending variable if it's not used in UI or use it if needed.
+  const isPending = isCreating || isUpdating
+
   const form = useForm<z.input<typeof productSchema>, unknown, Product>({
     resolver: zodResolver(productSchema),
-    defaultValues: {
+    defaultValues: product || {
       name: { en: '' },
       description: { en: '' },
       sku: '',
-      price: 0,
+      basePrice: 0,
       categoryId: '',
       status: ProductStatus.DRAFT,
-      imageUrl: '',
-      optionGroups: [],
+      imageUrl: {},
+      optionGroupIds: [],
       recipes: [],
     },
   })
+
+  // Reset form when product changes or sheet opens
+  useEffect(() => {
+    if (open) {
+      form.reset(
+        product || {
+          name: { en: '' },
+          description: { en: '' },
+          sku: '',
+          basePrice: 0,
+          categoryId: '',
+          status: ProductStatus.DRAFT,
+          imageUrl: {},
+          optionGroupIds: [],
+          recipes: [],
+        }
+      )
+    }
+  }, [open, product, form])
+
+  // ... (recipes array and cost calculations remain same) ...
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -66,7 +153,7 @@ export function ProductSheet({ open, onOpenChange }: ProductSheetProps) {
   // Watch recipe fields and price for live cost calculation
   const recipeItems = useWatch({ control: form.control, name: 'recipes' })
   const price =
-    (useWatch({ control: form.control, name: 'price' }) as number) || 0
+    (useWatch({ control: form.control, name: 'basePrice' }) as number) || 0
 
   const ingredientsWithCost =
     recipeItems?.map((item) => {
@@ -83,11 +170,37 @@ export function ProductSheet({ open, onOpenChange }: ProductSheetProps) {
   const totalCost = calculateRecipeCost(ingredientsWithCost)
   const margin = calculateMargin(price || 0, totalCost)
 
-  function onSubmit(data: Product) {
-    // eslint-disable-next-line no-console
-    console.log('Submitted Product:', data)
-    onOpenChange(false)
-    form.reset()
+  function onSubmit(data: z.infer<typeof productSchema>) {
+    if (product?.id) {
+      updateProduct(
+        { id: product.id, data },
+        {
+          onSuccess: () => {
+            toast.success('Product updated successfully')
+            onOpenChange(false)
+            form.reset()
+          },
+          onError: () => {
+            toast.error('Failed to update product')
+          },
+        }
+      )
+    } else {
+      const createPayload = {
+        ...data,
+        basePrice: data.basePrice, // Map price to basePrice as expected by API
+      }
+      createProduct(createPayload as unknown as CreateProductRequest, {
+        onSuccess: () => {
+          toast.success('Product created successfully')
+          onOpenChange(false)
+          form.reset()
+        },
+        onError: () => {
+          toast.error('Failed to create product')
+        },
+      })
+    }
   }
 
   return (
@@ -116,6 +229,24 @@ export function ProductSheet({ open, onOpenChange }: ProductSheetProps) {
               <TabsContent value='general' className='space-y-4 py-4'>
                 <FormField
                   control={form.control}
+                  name='imageUrl'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Product Image</FormLabel>
+                      <FormControl>
+                        <MultiLangImageUpload
+                          value={field.value || {}}
+                          onChange={field.onChange}
+                          disabled={isPending}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name='name'
                   render={({ field }) => (
                     <FormItem>
@@ -141,7 +272,11 @@ export function ProductSheet({ open, onOpenChange }: ProductSheetProps) {
                       <FormItem>
                         <FormLabel>SKU</FormLabel>
                         <FormControl>
-                          <Input placeholder='SKU' {...field} />
+                          <Input
+                            placeholder='SKU'
+                            {...field}
+                            disabled={!_.isEmpty(product)}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -149,7 +284,7 @@ export function ProductSheet({ open, onOpenChange }: ProductSheetProps) {
                   />
                   <FormField
                     control={form.control}
-                    name='price'
+                    name='basePrice'
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Price</FormLabel>
@@ -158,7 +293,7 @@ export function ProductSheet({ open, onOpenChange }: ProductSheetProps) {
                             type='number'
                             step='0.01'
                             {...field}
-                            value={field.value as number}
+                            value={(field.value as number) || 0}
                             onChange={(e) =>
                               field.onChange(Number(e.target.value))
                             }
@@ -187,7 +322,7 @@ export function ProductSheet({ open, onOpenChange }: ProductSheetProps) {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {MOCK_CATEGORIES.map((category) => (
+                            {categories?.map((category: Category) => (
                               <SelectItem key={category.id} value={category.id}>
                                 {category.name['en']}
                               </SelectItem>
@@ -248,57 +383,80 @@ export function ProductSheet({ open, onOpenChange }: ProductSheetProps) {
               </TabsContent>
 
               <TabsContent value='options' className='space-y-4 py-4'>
-                <div className='grid gap-4'>
-                  {MOCK_OPTION_GROUPS.map((group) => (
-                    <FormField
-                      key={group.id}
-                      control={form.control}
-                      name='optionGroups'
-                      render={({ field }) => {
-                        return (
-                          <FormItem
-                            key={group.id}
-                            className='flex flex-row items-start space-y-0 space-x-3 text-left'
-                          >
-                            <FormControl className='mt-1'>
-                              <Checkbox
-                                checked={field.value?.includes(
-                                  group.id as string
-                                )}
-                                onCheckedChange={(checked) => {
-                                  return checked
-                                    ? field.onChange([
-                                        ...(field.value || []),
-                                        group.id,
-                                      ])
-                                    : field.onChange(
-                                        field.value?.filter(
-                                          (value) => value !== group.id
-                                        )
-                                      )
-                                }}
-                              />
-                            </FormControl>
-                            <div className='space-y-1 leading-none'>
-                              <FormLabel className='text-base font-medium'>
-                                {group.name}
-                              </FormLabel>
-                              <div className='flex gap-2 text-sm text-muted-foreground'>
-                                <Badge variant='outline'>{group.type}</Badge>
-                                <span>{group.options.length} choices</span>
+                <FormField
+                  control={form.control}
+                  name='optionGroupIds'
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className='grid gap-4'>
+                        {optionGroups?.map((group: OptionGroup) => (
+                          <Collapsible key={group.id}>
+                            <FormItem className='space-y-0'>
+                              <div className='flex cursor-pointer items-start space-x-3 rounded-md border p-3 transition-colors hover:bg-muted/50'>
+                                <FormControl
+                                  className='mt-1'
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Checkbox
+                                    checked={field.value?.includes(group.id)}
+                                    onCheckedChange={(checked) => {
+                                      return checked
+                                        ? field.onChange([
+                                            ...(field.value || []),
+                                            group.id,
+                                          ])
+                                        : field.onChange(
+                                            field.value?.filter(
+                                              (value) => value !== group.id
+                                            )
+                                          )
+                                    }}
+                                  />
+                                </FormControl>
+                                <div className='flex-1 space-y-2 leading-none'>
+                                  <div className='flex items-center'>
+                                    <FormLabel className='cursor-pointer text-base font-medium'>
+                                      {group.name['en'] || 'Untitled'}
+                                    </FormLabel>
+                                  </div>
+                                  <CollapsibleTrigger asChild>
+                                    <Button
+                                      variant='ghost'
+                                      size='sm'
+                                      className='group flex items-center gap-2 p-0 text-sm text-muted-foreground hover:bg-transparent'
+                                      type='button'
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <ChevronRight className='h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-90' />
+                                      <span className='sr-only'>
+                                        Toggle choices
+                                      </span>
+                                      <Badge variant='outline'>
+                                        {group.type}
+                                      </Badge>
+                                      <span>
+                                        {group._count?.choices || 0} choices
+                                      </span>
+                                    </Button>
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent>
+                                    <div
+                                      className='mt-2 pl-0'
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <OptionGroupDetails group={group} />
+                                    </div>
+                                  </CollapsibleContent>
+                                </div>
                               </div>
-                            </div>
-                          </FormItem>
-                        )
-                      }}
-                    />
-                  ))}
-                  {MOCK_OPTION_GROUPS.length === 0 && (
-                    <p className='text-sm text-muted-foreground'>
-                      No option groups available. Create one in Option Groups.
-                    </p>
+                            </FormItem>
+                          </Collapsible>
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
+                />
               </TabsContent>
 
               <TabsContent value='recipes' className='space-y-4 py-4'>
@@ -441,7 +599,9 @@ export function ProductSheet({ open, onOpenChange }: ProductSheetProps) {
             </Tabs>
 
             <div className='mt-auto flex justify-end pt-4'>
-              <Button type='submit'>Save Product</Button>
+              <Button type='submit' disabled={isPending}>
+                {isPending ? 'Saving...' : 'Save Product'}
+              </Button>
             </div>
           </form>
         </Form>

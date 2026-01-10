@@ -9,14 +9,14 @@ import {
 import { AuthLayout } from '../auth-layout'
 import { UserAuthForm } from './components/user-auth-form'
 
-export function SignIn() {
-  const { redirect } = useSearch({ from: '/(auth)/sign-in' })
+export function Login() {
+  const { redirect } = useSearch({ from: '/(auth)/login' })
 
   return (
     <AuthLayout>
       <Card className='gap-4'>
         <CardHeader>
-          <CardTitle className='text-lg tracking-tight'>Sign in</CardTitle>
+          <CardTitle className='text-lg tracking-tight'>Login</CardTitle>
           <CardDescription>
             Enter your email and password below to <br />
             log into your account

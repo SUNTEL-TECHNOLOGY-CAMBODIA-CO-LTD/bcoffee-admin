@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { createLazyFileRoute } from '@tanstack/react-router'
+import { useCategories } from '@/hooks/queries/use-catalog'
+import { BrandLoader } from '@/components/ui/brand-loader'
 import { PageTitle } from '@/components/page-title'
 import { CategoriesTable } from '@/features/menu/components/categories-table'
 import { CategorySheet } from '@/features/menu/components/category-sheet'
@@ -11,17 +13,26 @@ export const Route = createLazyFileRoute('/_authenticated/menu/categories')({
 
 function CategoriesPage() {
   const [open, setOpen] = useState(false)
-  const [selectedCategory, setSelectedCategory] =
-    useState<React.ComponentProps<typeof CategorySheet>['initialData']>(null)
+  const [selectedCategory, setSelectedCategory] = useState<
+    | (React.ComponentProps<typeof CategorySheet>['initialData'] & {
+        id?: string
+      })
+    | null
+  >(null)
+
+  const { data: categories, isLoading } = useCategories()
 
   const handleEdit = (category: Category) => {
-    setSelectedCategory({
-      name: category.name.en,
-      slug: category.slug,
-      parentId: category.parentId,
-      sortOrder: category.sortOrder,
-    })
+    setSelectedCategory(category)
     setOpen(true)
+  }
+
+  if (isLoading) {
+    return (
+      <div className='flex h-[80vh] w-full items-center justify-center'>
+        <BrandLoader />
+      </div>
+    )
   }
 
   return (
@@ -35,12 +46,26 @@ function CategoriesPage() {
         }}
       />
 
-      <CategoriesTable onEdit={handleEdit} />
+      <CategoriesTable
+        data={(categories as Category[]) || []}
+        onEdit={handleEdit}
+      />
 
       <CategorySheet
         open={open}
         onOpenChange={setOpen}
-        initialData={selectedCategory}
+        initialData={
+          selectedCategory
+            ? {
+                id: selectedCategory?.id || undefined,
+                name: selectedCategory?.name || {},
+                slug: selectedCategory?.slug || '',
+                sortOrder: selectedCategory?.sortOrder || 0,
+                description: selectedCategory?.description || undefined,
+                parentId: selectedCategory?.parentId || undefined,
+              }
+            : null
+        }
       />
     </div>
   )

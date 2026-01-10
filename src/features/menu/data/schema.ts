@@ -59,11 +59,11 @@ export const productSchema = z.object({
   }),
   description: z.record(z.string(), z.string()).optional(),
   sku: z.string().min(1, 'SKU is required'),
-  price: z.coerce.number().min(0, 'Price must be non-negative'),
+  basePrice: z.coerce.number().min(0, 'Price must be non-negative'),
   categoryId: z.string().min(1, 'Category is required'),
   status: z.nativeEnum(ProductStatus),
-  imageUrl: z.string().optional(),
-  optionGroups: z.array(z.string()).default([]), // Array of Group IDs
+  imageUrl: z.record(z.string(), z.string()).optional(),
+  optionGroupIds: z.array(z.string()).default([]), // Array of Group IDs
   recipes: z.array(productRecipeSchema).default([]),
 })
 

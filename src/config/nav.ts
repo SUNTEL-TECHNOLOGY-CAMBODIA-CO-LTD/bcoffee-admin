@@ -72,7 +72,7 @@ export const hqNav = [
     icon: Coffee,
     items: [
       { title: 'Categories', url: '/menu/categories' },
-      { title: 'Products', url: '/menu/catalog' },
+      { title: 'Products', url: '/menu/products' },
       {
         title: 'Option Groups',
         url: '/menu/options',

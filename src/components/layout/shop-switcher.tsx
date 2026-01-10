@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { ChevronsUpDown, Plus } from 'lucide-react'
-import { useShopStore } from '@/stores/shop-store'
+import { useAppStore } from '@/hooks/use-app-store'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,17 +20,17 @@ import { ShopSheet } from '@/features/settings/components/shop-sheet'
 
 export function ShopSwitcher() {
   const { isMobile } = useSidebar()
-  const { shops, shopId, setShopId } = useShopStore()
+  const { shops, activeShopId, setActiveShopId } = useAppStore()
   const [showCreateSheet, setShowCreateSheet] = React.useState(false)
 
   // Set initial shop if none selected
   React.useEffect(() => {
-    if (!shopId && shops.length > 0) {
-      setShopId(shops[0].id)
+    if (!activeShopId && shops.length > 0) {
+      setActiveShopId(shops[0].code)
     }
-  }, [shopId, shops, setShopId])
+  }, [activeShopId, shops, setActiveShopId])
 
-  const activeShop = shops.find((s) => s.id === shopId) || shops[0]
+  const activeShop = shops.find((s) => s.id === activeShopId) || shops[0]
 
   return (
     <>
@@ -43,13 +43,17 @@ export function ShopSwitcher() {
                 className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
               >
                 <div className='flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground'>
-                  {activeShop?.logo && <activeShop.logo className='size-4' />}
+                  {/* Logo support pending API update */}
+                  <span className='font-bold'>
+                    {activeShop?.code?.substring(0, 2)}
+                  </span>
                 </div>
                 <div className='grid flex-1 text-start text-sm leading-tight'>
                   <span className='truncate font-semibold'>
-                    {activeShop?.name}
+                    {/* Simplified localized text handling */}
+                    {activeShop?.name?.['en'] || 'Shop'}
                   </span>
-                  <span className='truncate text-xs'>{activeShop?.plan}</span>
+                  <span className='truncate text-xs'>{activeShop?.code}</span>
                 </div>
                 <ChevronsUpDown className='ms-auto' />
               </SidebarMenuButton>
@@ -66,13 +70,15 @@ export function ShopSwitcher() {
               {shops.map((shop, index) => (
                 <DropdownMenuItem
                   key={shop.id}
-                  onClick={() => setShopId(shop.id)}
+                  onClick={() => setActiveShopId(shop.id)}
                   className='gap-2 p-2'
                 >
                   <div className='flex size-6 items-center justify-center rounded-sm border'>
-                    {shop.logo && <shop.logo className='size-4 shrink-0' />}
+                    <span className='text-xs font-bold'>
+                      {shop.code?.substring(0, 2)}
+                    </span>
                   </div>
-                  {shop.name}
+                  {shop.name?.['en'] || 'Shop'}
                   <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
                 </DropdownMenuItem>
               ))}

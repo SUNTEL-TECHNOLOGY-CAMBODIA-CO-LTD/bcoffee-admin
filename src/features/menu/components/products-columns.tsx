@@ -1,5 +1,6 @@
 import { type ColumnDef } from '@tanstack/react-table'
 import { MoreHorizontal, ImageIcon } from 'lucide-react'
+import { formatCurrency } from '@/utils/format'
 import { getTranslation } from '@/utils/i18n'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -14,24 +15,28 @@ import { DataTableColumnHeader } from '@/components/data-table'
 import { MOCK_CATEGORIES } from '../data/mock-categories'
 import { type Product, ProductStatus } from '../data/schema'
 
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount)
-}
-
 const getCategoryName = (categoryId: string) => {
   const category = MOCK_CATEGORIES.find((c) => c.id === categoryId)
   return category ? getTranslation(category.name) : 'Unknown'
 }
 
-export const columns: ColumnDef<Product>[] = [
+export type ProductActions = {
+  onEdit: (product: Product) => void
+  onDelete: (product: Product) => void
+}
+
+export const getColumns = ({
+  onEdit,
+  onDelete,
+}: ProductActions): ColumnDef<Product>[] => [
   {
     accessorKey: 'imageUrl',
     header: 'Image',
     cell: ({ row }) => {
-      const url = row.getValue('imageUrl') as string
+      const imageUrl = row.getValue('imageUrl') as
+        | Record<string, string>
+        | undefined
+      const url = imageUrl ? getTranslation(imageUrl) : ''
       return (
         <div className='flex h-10 w-10 items-center justify-center rounded bg-muted'>
           {url ? (
@@ -111,8 +116,13 @@ export const columns: ColumnDef<Product>[] = [
             >
               Copy SKU
             </DropdownMenuItem>
-            <DropdownMenuItem>Edit</DropdownMenuItem>
-            <DropdownMenuItem className='text-destructive'>
+            <DropdownMenuItem onClick={() => onEdit(row.original)}>
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className='text-destructive'
+              onClick={() => onDelete(row.original)}
+            >
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
