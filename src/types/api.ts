@@ -80,26 +80,29 @@ export type UpdateCategoryRequest = Partial<CreateCategoryRequest>
 export interface CreateProductRequest {
   name: LocalizedText
   sku: string
-  basePrice: number
+  // basePrice removed, replaced by price structure
   categoryId: string
   description?: LocalizedText
   collectionIds?: string[]
   optionGroupIds?: string[]
   imageUrl?: LocalizedText
+  // New fields
+  price: ProductOptionGroup // The variant group for price
+  priceGroupId: string
 }
 
 export interface Product {
   id: string
   name: LocalizedText
   sku: string
-  price: number
+  price: ProductOptionGroup // Changed from number
+  priceGroupId: string
   status: string // ProductStatus enum in DB spec
   categoryId: string
   optionGroupIds?: string[] // M:N relationship
   imageUrl?: LocalizedText
   createdAt: string
   updatedAt: string
-  // Add other fields as needed from response
 }
 
 export interface ProductFilters {
@@ -132,6 +135,30 @@ export interface OptionChoice {
   name: LocalizedText
   price: number
 }
+
+export type ProductOptionGroup = Omit<OptionGroup, 'id'> & { id?: string }
+
+// Option Group DTOs
+export interface CreateOptionChoiceDto {
+  name: LocalizedText
+  sku: string
+  priceModifier?: number // Deprecated? The spec says priceModifier, but UI uses price.
+  price?: number
+  isDefault?: boolean
+}
+
+export interface UpdateOptionChoiceDto extends Partial<CreateOptionChoiceDto> {}
+
+export interface CreateOptionGroupDto {
+  name: LocalizedText
+  sku: string
+  type: OptionType
+  minSelect: number
+  maxSelect: number
+  choices?: CreateOptionChoiceDto[]
+}
+
+export interface UpdateOptionGroupDto extends Partial<CreateOptionGroupDto> {}
 
 // Orders
 export interface Order {

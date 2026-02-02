@@ -1,10 +1,4 @@
-export interface Category {
-  id: string
-  name: Record<string, string>
-  slug: string
-  parentId?: string
-  sortOrder: number
-}
+import { type Category } from './schema'
 
 export const MOCK_CATEGORIES: Category[] = [
   {

@@ -1,6 +1,12 @@
+import { useEffect } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus, Trash2, Link } from 'lucide-react'
+import { toast } from 'sonner'
+import {
+  useCreateOptionGroup,
+  useUpdateOptionGroup,
+} from '@/hooks/queries/use-catalog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -37,21 +43,28 @@ import {
 interface OptionGroupSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  initialData?: ProductOptionGroup | null
 }
 
 export function OptionGroupSheet({
   open,
   onOpenChange,
+  initialData,
 }: OptionGroupSheetProps) {
+  const { mutate: createGroup, isPending: isCreating } = useCreateOptionGroup()
+  const { mutate: updateGroup, isPending: isUpdating } = useUpdateOptionGroup()
+
+  const isPending = isCreating || isUpdating
+
   const form = useForm({
     resolver: zodResolver(optionGroupSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       name: { en: '' },
       type: OptionType.VARIANT,
       sku: '',
       minSelect: 0,
       maxSelect: 1,
-      options: [
+      choices: [
         {
           name: { en: '' },
           sku: '',
@@ -61,16 +74,77 @@ export function OptionGroupSheet({
     },
   })
 
+  // Reset form when opening or initialData changes
+  useEffect(() => {
+    if (open) {
+      form.reset(
+        initialData || {
+          name: { en: '' },
+          type: OptionType.VARIANT,
+          sku: '',
+          minSelect: 0,
+          maxSelect: 1,
+          choices: [
+            {
+              name: { en: '' },
+              sku: '',
+              price: 0,
+            },
+          ],
+        }
+      )
+    }
+  }, [open, initialData, form])
+
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: 'options',
+    name: 'choices',
   })
 
   function onSubmit(data: ProductOptionGroup) {
     // eslint-disable-next-line no-console
-    console.log('Submitted Option Group:', data)
-    onOpenChange(false)
-    form.reset()
+    console.log('Submitting Option Group Data:', data)
+    // eslint-disable-next-line no-console
+    console.log('Initial Data:', initialData)
+
+    if (initialData?.id) {
+      // eslint-disable-next-line no-console
+      console.log('Updating existing group:', initialData.id)
+      updateGroup(
+        { id: initialData.id, data },
+        {
+          onSuccess: (response) => {
+            // eslint-disable-next-line no-console
+            console.log('Update Success Response:', response)
+            toast.success('Option group updated')
+            onOpenChange(false)
+            form.reset()
+          },
+          onError: (error) => {
+            // eslint-disable-next-line no-console
+            console.error('Update Error:', error)
+            toast.error('Failed to update option group')
+          },
+        }
+      )
+    } else {
+      // eslint-disable-next-line no-console
+      console.log('Creating new group')
+      createGroup(data, {
+        onSuccess: (response) => {
+          // eslint-disable-next-line no-console
+          console.log('Create Success Response:', response)
+          toast.success('Option group created')
+          onOpenChange(false)
+          form.reset()
+        },
+        onError: (error) => {
+          // eslint-disable-next-line no-console
+          console.error('Create Error:', error)
+          toast.error('Failed to create option group')
+        },
+      })
+    }
   }
 
   return (
@@ -225,7 +299,7 @@ export function OptionGroupSheet({
                     <div className='grid grid-cols-[1fr_1fr_100px_auto] items-start gap-2'>
                       <FormField
                         control={form.control}
-                        name={`options.${index}.name.en`}
+                        name={`choices.${index}.name.en`}
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className='text-xs'>Name</FormLabel>
@@ -238,7 +312,7 @@ export function OptionGroupSheet({
                       />
                       <FormField
                         control={form.control}
-                        name={`options.${index}.sku`}
+                        name={`choices.${index}.sku`}
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className='text-xs'>SKU</FormLabel>
@@ -251,7 +325,7 @@ export function OptionGroupSheet({
                       />
                       <FormField
                         control={form.control}
-                        name={`options.${index}.price`}
+                        name={`choices.${index}.price`}
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className='text-xs'>
@@ -299,7 +373,9 @@ export function OptionGroupSheet({
             </div>
 
             <div className='mt-auto flex justify-end pt-4'>
-              <Button type='submit'>Save Group</Button>
+              <Button type='submit' disabled={isPending}>
+                {isPending ? 'Saving...' : initialData ? 'Update' : 'Create'}
+              </Button>
             </div>
           </form>
         </Form>

@@ -12,12 +12,27 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { DataTableColumnHeader } from '@/components/data-table'
-import { MOCK_CATEGORIES } from '../data/mock-categories'
-import { type Product, ProductStatus } from '../data/schema'
+import { type Category, type Product, ProductStatus } from '../data/schema'
 
-const getCategoryName = (categoryId: string) => {
-  const category = MOCK_CATEGORIES.find((c) => c.id === categoryId)
+const getCategoryName = (categoryId: string, categories: Category[]) => {
+  const category = categories.find((c) => c.id === categoryId)
   return category ? getTranslation(category.name) : 'Unknown'
+}
+
+const formatProductPrice = (priceGroup: Product['price']) => {
+  if (!priceGroup || !priceGroup.choices || priceGroup.choices.length === 0) {
+    return '-'
+  }
+
+  const prices = priceGroup.choices.map((c) => c.price)
+  const minPrice = Math.min(...prices)
+  const maxPrice = Math.max(...prices)
+
+  if (minPrice === maxPrice) {
+    return formatCurrency(minPrice)
+  }
+
+  return `${formatCurrency(minPrice)} - ${formatCurrency(maxPrice)}`
 }
 
 export type ProductActions = {
@@ -28,7 +43,8 @@ export type ProductActions = {
 export const getColumns = ({
   onEdit,
   onDelete,
-}: ProductActions): ColumnDef<Product>[] => [
+  categories,
+}: ProductActions & { categories: Category[] }): ColumnDef<Product>[] => [
   {
     accessorKey: 'imageUrl',
     header: 'Image',
@@ -71,14 +87,14 @@ export const getColumns = ({
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Category' />
     ),
-    cell: ({ row }) => getCategoryName(row.getValue('categoryId')),
+    cell: ({ row }) => getCategoryName(row.getValue('categoryId'), categories),
   },
   {
     accessorKey: 'price',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Price' />
     ),
-    cell: ({ row }) => formatCurrency(row.getValue('price')),
+    cell: ({ row }) => formatProductPrice(row.original.price),
   },
   {
     accessorKey: 'status',

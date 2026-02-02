@@ -1,5 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table'
-import { Edit, MoreHorizontal, Trash } from 'lucide-react'
+import { Edit, MoreHorizontal, Trash, Image as ImageIcon } from 'lucide-react'
 import { getTranslation } from '@/utils/i18n'
 import { Button } from '@/components/ui/button'
 import {
@@ -9,7 +9,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { type Category, MOCK_CATEGORIES } from '../data/mock-categories'
+import { MOCK_CATEGORIES } from '../data/mock-categories'
+import { type Category } from '../data/schema'
 
 // Define the meta type for our table
 interface TableMeta {
@@ -17,6 +18,26 @@ interface TableMeta {
 }
 
 export const columns: ColumnDef<Category>[] = [
+  {
+    accessorKey: 'imageUrl',
+    header: 'Image',
+    cell: ({ row }) => {
+      const imageUrl = getTranslation(row.original.imageUrl)
+      return imageUrl ? (
+        <img
+          src={imageUrl}
+          alt={getTranslation(row.original.name)}
+          className='h-10 w-10 rounded-md object-cover'
+        />
+      ) : (
+        <div className='flex h-10 w-10 items-center justify-center rounded-md bg-muted text-muted-foreground'>
+          <ImageIcon className='h-5 w-5' />
+        </div>
+      )
+    },
+    enableSorting: false,
+    enableHiding: false,
+  },
   {
     accessorKey: 'name',
     header: 'Name',

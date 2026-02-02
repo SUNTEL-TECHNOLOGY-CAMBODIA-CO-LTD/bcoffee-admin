@@ -63,6 +63,7 @@ function CategoriesPage() {
                 sortOrder: selectedCategory?.sortOrder || 0,
                 description: selectedCategory?.description || undefined,
                 parentId: selectedCategory?.parentId || undefined,
+                imageUrl: selectedCategory?.imageUrl || {},
               }
             : null
         }

@@ -33,6 +33,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import { MultiLangImageUpload } from '@/components/custom/multi-lang-image-upload'
 import { MultiLangInput } from '@/components/custom/multi-lang-input'
 import { MultiLangTextarea } from '@/components/custom/multi-lang-textarea'
 import { type Category } from '../data/schema'
@@ -45,6 +46,7 @@ const categorySchema = z.object({
   slug: z.string().min(1, 'Slug is required'),
   parentId: z.string().nullable().optional(),
   sortOrder: z.coerce.number().default(0),
+  imageUrl: z.record(z.string(), z.string()).optional(),
 })
 
 type CategoryFormValues = z.infer<typeof categorySchema>
@@ -80,6 +82,7 @@ export function CategorySheet({
       description: {},
       slug: '',
       sortOrder: 0,
+      imageUrl: {},
     },
   })
 
@@ -91,6 +94,7 @@ export function CategorySheet({
           description: {},
           slug: '',
           sortOrder: 0,
+          imageUrl: {},
         }
       )
     }
@@ -114,9 +118,8 @@ export function CategorySheet({
             onOpenChange(false)
             form.reset()
           },
-          onError: (error) => {
+          onError: () => {
             toast.error('Failed to update category')
-            console.error(error)
           },
         }
       )
@@ -127,9 +130,8 @@ export function CategorySheet({
           onOpenChange(false)
           form.reset()
         },
-        onError: (error) => {
+        onError: () => {
           toast.error('Failed to create category')
-          console.error(error)
         },
       })
     }
@@ -153,6 +155,24 @@ export function CategorySheet({
             onSubmit={form.handleSubmit(onSubmit)}
             className='space-y-4 py-4'
           >
+            <FormField
+              control={form.control}
+              name='imageUrl'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category Image</FormLabel>
+                  <FormControl>
+                    <MultiLangImageUpload
+                      value={field.value || {}}
+                      onChange={field.onChange}
+                      disabled={isPending}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name='name'

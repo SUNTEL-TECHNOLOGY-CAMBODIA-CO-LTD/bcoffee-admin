@@ -3,6 +3,8 @@ import {
   type CreateProductRequest,
   type CreateCategoryRequest,
   type ProductFilters,
+  type CreateOptionGroupDto,
+  type UpdateOptionGroupDto,
   // Update types if needed
 } from '@/types/api'
 import { apiClient } from '@/lib/api-client'
@@ -39,6 +41,28 @@ export const getOptionGroups = async () => {
 
 export const getOptionGroup = async (id: string) => {
   const response = await apiClient.get(`/admin/option-groups/${id}`)
+  return response.data
+}
+
+export const createOptionGroup = async (data: CreateOptionGroupDto) => {
+  // eslint-disable-next-line no-console
+  console.log('API createOptionGroup payload:', data)
+  const response = await apiClient.post('/admin/option-groups', data)
+  return response.data
+}
+
+export const updateOptionGroup = async (
+  id: string,
+  data: UpdateOptionGroupDto
+) => {
+  // eslint-disable-next-line no-console
+  console.log('API updateOptionGroup payload:', { id, data })
+  const response = await apiClient.patch(`/admin/option-groups/${id}`, data)
+  return response.data
+}
+
+export const deleteOptionGroup = async (id: string) => {
+  const response = await apiClient.delete(`/admin/option-groups/${id}`)
   return response.data
 }
 

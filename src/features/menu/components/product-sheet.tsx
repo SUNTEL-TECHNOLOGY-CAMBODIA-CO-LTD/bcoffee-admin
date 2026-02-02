@@ -55,12 +55,12 @@ import { MultiLangImageUpload } from '@/components/custom/multi-lang-image-uploa
 import { MultiLangInput } from '@/components/custom/multi-lang-input'
 import { MultiLangTextarea } from '@/components/custom/multi-lang-textarea'
 import { MOCK_INGREDIENTS } from '../data/mock-ingredients'
-// import { MOCK_OPTION_GROUPS } from '../data/mock-options'
 import {
   type Category,
   productSchema,
   ProductStatus,
   type Product,
+  OptionType,
 } from '../data/schema'
 
 function OptionGroupDetails({ group }: { group: OptionGroup }) {
@@ -115,7 +115,21 @@ export function ProductSheet({
       name: { en: '' },
       description: { en: '' },
       sku: '',
-      basePrice: 0,
+      price: {
+        name: { en: 'Size' },
+        type: OptionType.VARIANT,
+        sku: '',
+        minSelect: 1,
+        maxSelect: 1,
+        choices: [
+          {
+            sku: '',
+            name: { en: 'Standard' },
+            price: 0,
+          },
+        ],
+      },
+      priceGroupId: '',
       categoryId: '',
       status: ProductStatus.DRAFT,
       imageUrl: {},
@@ -132,7 +146,21 @@ export function ProductSheet({
           name: { en: '' },
           description: { en: '' },
           sku: '',
-          basePrice: 0,
+          price: {
+            name: { en: 'Size' },
+            type: OptionType.VARIANT,
+            sku: '',
+            minSelect: 1,
+            maxSelect: 1,
+            choices: [
+              {
+                sku: '',
+                name: { en: 'Standard' },
+                price: 0,
+              },
+            ],
+          },
+          priceGroupId: '',
           categoryId: '',
           status: ProductStatus.DRAFT,
           imageUrl: {},
@@ -143,6 +171,20 @@ export function ProductSheet({
     }
   }, [open, product, form])
 
+  // Watch SKU to auto-generate price SKU
+  const productSku = useWatch({ control: form.control, name: 'sku' })
+  useEffect(() => {
+    const currentPriceSku = form.getValues('price.sku')
+    if (
+      productSku &&
+      (!currentPriceSku ||
+        currentPriceSku === `${productSku}-VAR` ||
+        currentPriceSku.endsWith('-VAR'))
+    ) {
+      form.setValue('price.sku', `${productSku}-VAR`)
+    }
+  }, [productSku, form])
+
   // ... (recipes array and cost calculations remain same) ...
 
   const { fields, append, remove } = useFieldArray({
@@ -152,8 +194,10 @@ export function ProductSheet({
 
   // Watch recipe fields and price for live cost calculation
   const recipeItems = useWatch({ control: form.control, name: 'recipes' })
-  const price =
-    (useWatch({ control: form.control, name: 'basePrice' }) as number) || 0
+  // For cost calc, if single price, use that. If variant, maybe use lowest?
+  // Let's just use the first choice's price for now as a rough estimate or 0.
+  const priceData = useWatch({ control: form.control, name: 'price' })
+  const estimatedPrice = Number(priceData?.choices?.[0]?.price) || 0
 
   const ingredientsWithCost =
     recipeItems?.map((item) => {
@@ -168,7 +212,7 @@ export function ProductSheet({
     }) || []
 
   const totalCost = calculateRecipeCost(ingredientsWithCost)
-  const margin = calculateMargin(price || 0, totalCost)
+  const margin = calculateMargin(estimatedPrice, totalCost)
 
   function onSubmit(data: z.infer<typeof productSchema>) {
     if (product?.id) {
@@ -186,11 +230,7 @@ export function ProductSheet({
         }
       )
     } else {
-      const createPayload = {
-        ...data,
-        basePrice: data.basePrice, // Map price to basePrice as expected by API
-      }
-      createProduct(createPayload as unknown as CreateProductRequest, {
+      createProduct(data as unknown as CreateProductRequest, {
         onSuccess: () => {
           toast.success('Product created successfully')
           onOpenChange(false)
@@ -250,7 +290,7 @@ export function ProductSheet({
                   name='name'
                   render={({ field }) => (
                     <FormItem>
-                      {/* Label is handled inside MultiLangInput or we can keep it here */}
+                      {/* Label is handled inside MultiLangInput */}
                       <FormControl>
                         <MultiLangInput
                           label='Product Name'
@@ -264,45 +304,157 @@ export function ProductSheet({
                   )}
                 />
 
-                <div className='grid grid-cols-2 gap-4'>
+                <FormField
+                  control={form.control}
+                  name='sku'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>SKU</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder='SKU'
+                          {...field}
+                          disabled={!_.isEmpty(product)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Pricing Strategy Section */}
+                <FormLabel>Pricing Strategy</FormLabel>
+                <div className='rounded-lg border p-2'>
                   <FormField
                     control={form.control}
-                    name='sku'
+                    name='price.name'
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>SKU</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder='SKU'
-                            {...field}
-                            disabled={!_.isEmpty(product)}
+                          <MultiLangInput
+                            label='Label (e.g. Size)'
+                            placeholder='Size'
+                            value={field.value as Record<string, string>}
+                            onChange={field.onChange}
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name='basePrice'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Price</FormLabel>
-                        <FormControl>
-                          <Input
-                            type='number'
-                            step='0.01'
-                            {...field}
-                            value={(field.value as number) || 0}
-                            onChange={(e) =>
-                              field.onChange(Number(e.target.value))
-                            }
+
+                  <div className='space-y-2'>
+                    <div className='mb-2 grid grid-cols-12 gap-2 px-2 pt-2'>
+                      <div className='col-span-5 text-sm font-medium'>
+                        Variant Name
+                      </div>
+                      <div className='col-span-3 text-sm font-medium'>
+                        Price
+                      </div>
+                      <div className='col-span-3 text-sm font-medium'>SKU</div>
+                      <div className='col-span-1'></div>
+                    </div>
+
+                    {/* Variants List */}
+                    {(form.watch('price.choices') || []).map((_, index) => (
+                      <div
+                        key={index}
+                        className='grid grid-cols-12 items-end gap-2 p-2'
+                      >
+                        <div className='col-span-5'>
+                          <FormField
+                            control={form.control}
+                            name={`price.choices.${index}.name`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <MultiLangInput
+                                  placeholder='Standard'
+                                  value={field.value as Record<string, string>}
+                                  onChange={field.onChange}
+                                />
+                              </FormItem>
+                            )}
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                        </div>
+                        <div className='col-span-3'>
+                          <FormField
+                            control={form.control}
+                            name={`price.choices.${index}.price`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <Input
+                                  type='number'
+                                  step='0.01'
+                                  {...field}
+                                  value={
+                                    typeof field.value === 'number'
+                                      ? field.value
+                                      : 0
+                                  }
+                                  onChange={(e) =>
+                                    field.onChange(Number(e.target.value))
+                                  }
+                                />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <div className='col-span-3'>
+                          <FormField
+                            control={form.control}
+                            name={`price.choices.${index}.sku`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <Input {...field} placeholder='SKU' />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <div className='col-span-1 pt-1'>
+                          <Button
+                            type='button'
+                            variant='ghost'
+                            size='icon'
+                            onClick={() => {
+                              const choices =
+                                form.getValues('price.choices') || []
+                              form.setValue(
+                                'price.choices',
+                                choices.filter((__, i) => i !== index)
+                              )
+                            }}
+                          >
+                            &times;
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+
+                    <Button
+                      type='button'
+                      size='sm'
+                      variant='outline'
+                      className='mt-2 self-end'
+                      onClick={() => {
+                        const choices = form.getValues('price.choices') || []
+                        const parentSku = form.getValues('sku')
+                        const newSku = parentSku
+                          ? `${parentSku}-${choices.length + 1}`
+                          : ''
+
+                        form.setValue('price.choices', [
+                          ...choices,
+                          {
+                            sku: newSku,
+                            name: { en: '' },
+                            price: 0,
+                          },
+                        ])
+                      }}
+                    >
+                      Add Variant
+                    </Button>
+                  </div>
                 </div>
 
                 <div className='grid grid-cols-2 gap-4'>
@@ -367,7 +519,6 @@ export function ProductSheet({
                   name='description'
                   render={({ field }) => (
                     <FormItem>
-                      {/* Label handled inside or outside. Let's pass it in. */}
                       <FormControl>
                         <MultiLangTextarea
                           label='Description (Optional)'

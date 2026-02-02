@@ -2,7 +2,11 @@ import { useState } from 'react'
 import { createLazyFileRoute } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { getTranslation } from '@/utils/i18n'
-import { useProducts, useDeleteProduct } from '@/hooks/queries/use-catalog'
+import {
+  useProducts,
+  useDeleteProduct,
+  useCategories,
+} from '@/hooks/queries/use-catalog'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,7 +21,7 @@ import { BrandLoader } from '@/components/ui/brand-loader'
 import { PageTitle } from '@/components/page-title'
 import { ProductSheet } from '@/features/menu/components/product-sheet'
 import { ProductsTable } from '@/features/menu/components/products-table'
-import { type Product } from '@/features/menu/data/schema'
+import { type Product, type Category } from '@/features/menu/data/schema'
 
 export const Route = createLazyFileRoute('/_authenticated/menu/products')({
   component: RouteComponent,
@@ -28,7 +32,8 @@ function RouteComponent() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null)
 
-  const { data: response, isLoading } = useProducts()
+  const { data: response, isLoading: isLoadingProducts } = useProducts()
+  const { data: categories, isLoading: isLoadingCategories } = useCategories()
   const { mutate: deleteProductMutation } = useDeleteProduct()
   const products = response?.data || []
 
@@ -63,7 +68,7 @@ function RouteComponent() {
     }
   }
 
-  if (isLoading) {
+  if (isLoadingProducts || isLoadingCategories) {
     return (
       <div className='flex h-[80vh] w-full items-center justify-center'>
         <BrandLoader />
@@ -84,6 +89,7 @@ function RouteComponent() {
 
       <ProductsTable
         data={products || []}
+        categories={(categories as Category[]) || []}
         onEdit={handleEdit}
         onDelete={handleDelete}
       />

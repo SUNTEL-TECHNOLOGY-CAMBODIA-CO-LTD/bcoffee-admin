@@ -1,5 +1,6 @@
 import { type ColumnDef } from '@tanstack/react-table'
 import { MoreHorizontal } from 'lucide-react'
+import { getTranslation } from '@/utils/i18n'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,11 +12,19 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { type ProductOptionGroup } from '../data/schema'
 
-export const columns: ColumnDef<ProductOptionGroup>[] = [
+interface OptionGroupActions {
+  onEdit: (group: ProductOptionGroup) => void
+  onDelete: (group: ProductOptionGroup) => void
+}
+
+export const getColumns = ({
+  onEdit,
+  onDelete,
+}: OptionGroupActions): ColumnDef<ProductOptionGroup>[] => [
   {
     accessorKey: 'name',
     header: 'Name',
-    cell: ({ row }) => row.original.name,
+    cell: ({ row }) => getTranslation(row.original.name),
   },
   {
     accessorKey: 'type',
@@ -43,9 +52,9 @@ export const columns: ColumnDef<ProductOptionGroup>[] = [
     },
   },
   {
-    accessorKey: 'options',
+    accessorKey: 'choices',
     header: 'Choices',
-    cell: ({ row }) => row.original.options.length,
+    cell: ({ row }) => row.original.choices?.length || 0,
   },
   {
     id: 'actions',
@@ -65,8 +74,13 @@ export const columns: ColumnDef<ProductOptionGroup>[] = [
             >
               Copy SKU
             </DropdownMenuItem>
-            <DropdownMenuItem>Edit</DropdownMenuItem>
-            <DropdownMenuItem className='text-destructive'>
+            <DropdownMenuItem onClick={() => onEdit(row.original)}>
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className='text-destructive'
+              onClick={() => onDelete(row.original)}
+            >
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>

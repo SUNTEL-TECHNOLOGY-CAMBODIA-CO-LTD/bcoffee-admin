@@ -19,12 +19,14 @@ export type ProductOptionChoice = z.infer<typeof optionChoiceSchema>
 
 export const optionGroupSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(1, 'Group Name is required'),
+  name: z.record(z.string(), z.string()).refine((data) => !!data['en'], {
+    message: 'Group Name (EN) is required',
+  }),
   type: z.nativeEnum(OptionType),
   sku: z.string().min(1, 'SKU is required'),
   minSelect: z.coerce.number().min(0, 'Min selection must be at least 0'),
   maxSelect: z.coerce.number().min(1, 'Max selection must be at least 1'),
-  options: z.array(optionChoiceSchema).default([]),
+  choices: z.array(optionChoiceSchema).default([]),
 })
 
 export type ProductOptionGroup = z.infer<typeof optionGroupSchema>
@@ -43,6 +45,7 @@ export interface Category {
   slug: string
   parentId?: string
   sortOrder: number
+  imageUrl?: Record<string, string>
 }
 
 export const productRecipeSchema = z.object({
@@ -59,7 +62,9 @@ export const productSchema = z.object({
   }),
   description: z.record(z.string(), z.string()).optional(),
   sku: z.string().min(1, 'SKU is required'),
-  basePrice: z.coerce.number().min(0, 'Price must be non-negative'),
+  // basePrice removed
+  price: optionGroupSchema, // Using existing optionGroupSchema for the price variant group
+  priceGroupId: z.string().optional(), // ID of the price group if it exists
   categoryId: z.string().min(1, 'Category is required'),
   status: z.nativeEnum(ProductStatus),
   imageUrl: z.record(z.string(), z.string()).optional(),

@@ -10,11 +10,15 @@ import {
   updateProduct,
   getOptionGroups,
   getOptionGroup,
+  createOptionGroup,
+  updateOptionGroup,
+  deleteOptionGroup,
 } from '@/services/catalog'
 import type {
   CreateCategoryRequest,
   CreateProductRequest,
   ProductFilters,
+  UpdateOptionGroupDto,
 } from '@/types/api'
 
 // Categories
@@ -73,6 +77,42 @@ export const useOptionGroup = (id: string) => {
     queryKey: ['option-group', id],
     queryFn: () => getOptionGroup(id),
     enabled: !!id,
+  })
+}
+
+export const useCreateOptionGroup = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: createOptionGroup,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['option-groups'] })
+    },
+  })
+}
+
+export const useUpdateOptionGroup = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string
+      data: Partial<UpdateOptionGroupDto>
+    }) => updateOptionGroup(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['option-groups'] })
+    },
+  })
+}
+
+export const useDeleteOptionGroup = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: deleteOptionGroup,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['option-groups'] })
+    },
   })
 }
 
