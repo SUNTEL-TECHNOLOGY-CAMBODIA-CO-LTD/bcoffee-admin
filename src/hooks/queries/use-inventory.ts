@@ -9,8 +9,10 @@ import {
   updateIngredient,
   updateUnit,
   deleteUnit,
+  getShopStock,
+  adjustStock,
 } from '@/services/inventory'
-import { getInventory, adjustStock } from '@/services/ops'
+// import { getInventory, adjustStock } from '@/services/ops' // Deprecated?
 import { type AdjustStockRequest } from '@/types/api'
 import {
   type CreateIngredientDto,
@@ -19,10 +21,10 @@ import {
   type UpdateUnitDto,
 } from '@/types/inventory'
 
-export const useInventory = (shopId: string) => {
+export const useShopStock = (shopId: string) => {
   return useQuery({
-    queryKey: ['inventory', shopId],
-    queryFn: () => getInventory(shopId),
+    queryKey: ['shop-inventory', shopId],
+    queryFn: () => getShopStock(shopId),
     enabled: !!shopId,
   })
 }
@@ -31,10 +33,16 @@ export const useAdjustStock = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (data: AdjustStockRequest) => adjustStock(data),
+    mutationFn: ({
+      shopId,
+      data,
+    }: {
+      shopId: string
+      data: AdjustStockRequest
+    }) => adjustStock(shopId, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ['inventory', variables.shopId],
+        queryKey: ['shop-inventory', variables.shopId],
       })
     },
   })

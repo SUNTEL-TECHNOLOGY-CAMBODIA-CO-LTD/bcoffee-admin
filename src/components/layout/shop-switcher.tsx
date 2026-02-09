@@ -26,7 +26,7 @@ export function ShopSwitcher() {
   // Set initial shop if none selected
   React.useEffect(() => {
     if (!activeShopId && shops.length > 0) {
-      setActiveShopId(shops[0].code)
+      setActiveShopId(shops[0].id)
     }
   }, [activeShopId, shops, setActiveShopId])
 

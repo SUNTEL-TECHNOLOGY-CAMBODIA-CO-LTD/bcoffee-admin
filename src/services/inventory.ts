@@ -1,3 +1,4 @@
+import { type AdjustStockRequest } from '@/types/api'
 import {
   type UnitOfMeasure,
   type CreateUnitDto,
@@ -7,6 +8,7 @@ import {
   type UpdateIngredientDto,
   type Recipe,
   type CreateRecipeDto,
+  type ShopIngredient,
 } from '@/types/inventory'
 import { apiClient } from '@/lib/api-client'
 
@@ -71,4 +73,19 @@ export const createRecipe = async (data: CreateRecipeDto): Promise<Recipe> => {
 
 export const deleteRecipe = async (id: string): Promise<void> => {
   await apiClient.delete(`/admin/recipes/${id}`)
+}
+
+// Shop Inventory
+export const getShopStock = async (
+  shopId: string
+): Promise<ShopIngredient[]> => {
+  const response = await apiClient.get(`/admin/shops/${shopId}/inventory`)
+  return response.data
+}
+
+export const adjustStock = async (
+  shopId: string,
+  data: AdjustStockRequest
+): Promise<void> => {
+  await apiClient.post(`/admin/shops/${shopId}/inventory/adjust`, data)
 }

@@ -34,11 +34,12 @@ export const useBootstrap = () => {
       const currentActiveId = localStorage.getItem('activeShopId')
 
       // If we have a stored ID and it exists in the fetched shops, use it
-      if (currentActiveId && shops.find((s) => s.code === currentActiveId)) {
+      // If we have a stored ID and it exists in the fetched shops, use it
+      if (currentActiveId && shops.find((s) => s.id === currentActiveId)) {
         setActiveShopId(currentActiveId)
       } else if (shops.length > 0) {
         // Otherwise default to the first shop
-        setActiveShopId(shops[0].code)
+        setActiveShopId(shops[0].id)
       } else {
         // No shops available
         setActiveShopId(null)

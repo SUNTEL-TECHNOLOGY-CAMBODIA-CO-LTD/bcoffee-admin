@@ -16,7 +16,7 @@ import { ShopSwitcher } from './shop-switcher'
 
 export function AppSidebar() {
   const { collapsible, variant } = useLayout()
-  const { activeShopId, user } = useAppStore()
+  const { activeShopId, user, shops } = useAppStore()
 
   // Map Staff object to NavUser expected format
   const navUser = user
@@ -27,6 +27,8 @@ export function AppSidebar() {
       }
     : sidebarData.user
 
+  const activeShop = shops.find((s) => s.id === activeShopId)
+
   return (
     <Sidebar collapsible={collapsible} variant={variant}>
       <SidebarHeader>
@@ -35,7 +37,7 @@ export function AppSidebar() {
       <SidebarContent>
         {/* Store Operations Group */}
         <NavGroup
-          title={`Store: ${activeShopId || 'Select Shop'}`}
+          title={`Store: ${activeShop?.code || 'Select Shop'}`}
           items={storeNav}
         />
 

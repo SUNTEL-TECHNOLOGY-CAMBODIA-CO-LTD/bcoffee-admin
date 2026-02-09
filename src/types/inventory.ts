@@ -61,3 +61,29 @@ export interface CreateRecipeDto {
   productId?: string
   optionId?: string
 }
+
+// Shop Inventory
+// Shop Inventory
+export interface ShopIngredient {
+  shopIngredientId: string
+  ingredientId: string
+  name: LocalizedText
+  sku: string
+  unit: LocalizedText // unit is a LocalizedText object in the log
+  unitSymbol: LocalizedText
+  currentStock: number
+  lowStockThreshold: number
+  lastRestockedAt: string | null
+  isLowStock?: boolean
+  price?: number | null
+}
+
+export interface InventoryLog {
+  id: string
+  shopId: string
+  ingredientId: string
+  quantityChange: number
+  reason: string // InventoryAdjustmentReason
+  note?: string
+  createdAt: string
+}

@@ -7,8 +7,8 @@ import { BrandLoader } from '@/components/ui/brand-loader'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/custom/data-table'
 import { PageTitle } from '@/components/page-title'
-import { UnitSheet } from './components/unit-sheet'
-import { columns } from './components/units-columns'
+import { UnitSheet } from './_components/unit-sheet'
+import { columns } from './_components/units-columns'
 
 export default function UnitsSettingsPage() {
   const { data: units, isLoading } = useUnits()
