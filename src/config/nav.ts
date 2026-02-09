@@ -1,9 +1,11 @@
 import {
   Activity,
   Banknote,
+  Beef,
   Building,
   Coffee,
   Package,
+  Ruler,
   Settings,
   ToggleRight,
   TrendingUp,
@@ -88,6 +90,15 @@ export const hqNav = [
     ],
   },
   {
+    title: 'Inventory',
+    url: '/inventory',
+    icon: Package,
+    items: [
+      { title: 'Ingredients', url: '/inventory/ingredients', icon: Beef },
+      { title: 'Units', url: '/inventory/units', icon: Ruler },
+    ],
+  },
+  {
     title: 'Growth & CRM',
     url: '/growth',
     icon: TrendingUp,
@@ -120,7 +131,6 @@ export const hqNav = [
     icon: Building,
     items: [
       { title: 'Business Profile', url: '/settings/business' },
-      { title: 'Units', url: '/settings/units' },
       { title: 'Roles & Permissions', url: '/settings/roles' },
       { title: 'Audit Logs', url: '/settings/audit-logs' },
       { title: 'Mobile App', url: '/settings/mobile-app' },

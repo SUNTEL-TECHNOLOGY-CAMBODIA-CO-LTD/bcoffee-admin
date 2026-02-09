@@ -114,6 +114,24 @@ export interface ProductFilters {
   collectionIds?: string[]
 }
 
+// Recipes
+export interface Recipe {
+  id: string
+  ingredientId: string
+  productId?: string
+  optionId?: string
+  quantity: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateRecipeDto {
+  ingredientId: string
+  quantity: number
+  productId?: string
+  optionId?: string
+}
+
 // Option Groups
 export interface OptionGroup {
   id: string
@@ -147,7 +165,7 @@ export interface CreateOptionChoiceDto {
   isDefault?: boolean
 }
 
-export interface UpdateOptionChoiceDto extends Partial<CreateOptionChoiceDto> {}
+export type UpdateOptionChoiceDto = Partial<CreateOptionChoiceDto>
 
 export interface CreateOptionGroupDto {
   name: LocalizedText
@@ -158,7 +176,7 @@ export interface CreateOptionGroupDto {
   choices?: CreateOptionChoiceDto[]
 }
 
-export interface UpdateOptionGroupDto extends Partial<CreateOptionGroupDto> {}
+export type UpdateOptionGroupDto = Partial<CreateOptionGroupDto>
 
 // Orders
 export interface Order {

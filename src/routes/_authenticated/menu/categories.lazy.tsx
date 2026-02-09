@@ -5,7 +5,7 @@ import { BrandLoader } from '@/components/ui/brand-loader'
 import { PageTitle } from '@/components/page-title'
 import { CategoriesTable } from '@/features/menu/components/categories-table'
 import { CategorySheet } from '@/features/menu/components/category-sheet'
-import { type Category } from '@/features/menu/data/mock-categories'
+import { type Category } from '@/features/menu/data/schema'
 
 export const Route = createLazyFileRoute('/_authenticated/menu/categories')({
   component: CategoriesPage,
@@ -23,6 +23,7 @@ function CategoriesPage() {
   const { data: categories, isLoading } = useCategories()
 
   const handleEdit = (category: Category) => {
+    // @ts-expect-error - Mismatch between schema Category and CategorySheet props (imageUrl type)
     setSelectedCategory(category)
     setOpen(true)
   }

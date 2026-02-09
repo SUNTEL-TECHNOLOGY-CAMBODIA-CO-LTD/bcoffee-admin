@@ -38,12 +38,12 @@ export const columns: ColumnDef<AvailabilityTableRow>[] = [
     accessorKey: 'name.en',
     header: 'Product',
     cell: ({ row }) => {
-      const name = row.original.name.en
+      const name = row.original.name?.['en'] || 'Unknown'
       const sku = row.original.sku
       return (
         <div>
           <div className='font-medium'>{name}</div>
-          <div className='text-xs text-muted-foreground'>{sku}</div>
+          <div className='font-mono text-xs text-muted-foreground'>{sku}</div>
         </div>
       )
     },
@@ -51,7 +51,10 @@ export const columns: ColumnDef<AvailabilityTableRow>[] = [
   {
     accessorKey: 'price',
     header: 'Base Price',
-    cell: ({ row }) => `$${row.original.price.toFixed(2)}`,
+    cell: ({ row }) => {
+      const price = Number(row.original.price) || 0
+      return `$${price.toFixed(2)}`
+    },
   },
   {
     id: 'availability',

@@ -22,7 +22,10 @@ export const columns: ColumnDef<Category>[] = [
     accessorKey: 'imageUrl',
     header: 'Image',
     cell: ({ row }) => {
-      const imageUrl = getTranslation(row.original.imageUrl)
+      const rawImage = row.original.imageUrl
+      const imageUrl =
+        typeof rawImage === 'string' ? rawImage : getTranslation(rawImage)
+
       return imageUrl ? (
         <img
           src={imageUrl}

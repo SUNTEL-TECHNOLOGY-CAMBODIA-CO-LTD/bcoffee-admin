@@ -1,0 +1,74 @@
+import {
+  type UnitOfMeasure,
+  type CreateUnitDto,
+  type UpdateUnitDto,
+  type Ingredient,
+  type CreateIngredientDto,
+  type UpdateIngredientDto,
+  type Recipe,
+  type CreateRecipeDto,
+} from '@/types/inventory'
+import { apiClient } from '@/lib/api-client'
+
+// Units of Measure
+export const getUnits = async (): Promise<UnitOfMeasure[]> => {
+  const response = await apiClient.get('/admin/uoms')
+  return response.data
+}
+
+export const createUnit = async (
+  data: CreateUnitDto
+): Promise<UnitOfMeasure> => {
+  const response = await apiClient.post('/admin/uoms', data)
+  return response.data
+}
+
+export const updateUnit = async (
+  id: string,
+  data: UpdateUnitDto
+): Promise<UnitOfMeasure> => {
+  const response = await apiClient.patch(`/admin/uoms/${id}`, data)
+  return response.data
+}
+
+export const deleteUnit = async (id: string): Promise<void> => {
+  await apiClient.delete(`/admin/uoms/${id}`)
+}
+
+// Ingredients
+export const getIngredients = async (): Promise<Ingredient[]> => {
+  const response = await apiClient.get('/admin/ingredients')
+  return response.data
+}
+
+export const createIngredient = async (
+  data: CreateIngredientDto
+): Promise<Ingredient> => {
+  const response = await apiClient.post('/admin/ingredients', data)
+  return response.data
+}
+
+export const updateIngredient = async (
+  id: string,
+  data: UpdateIngredientDto
+): Promise<Ingredient> => {
+  const response = await apiClient.patch(`/admin/ingredients/${id}`, data)
+  return response.data
+}
+
+// Recipes
+export const getRecipesByOptionId = async (
+  optionId: string
+): Promise<Recipe[]> => {
+  const response = await apiClient.get(`/admin/recipes/option/${optionId}`)
+  return response.data
+}
+
+export const createRecipe = async (data: CreateRecipeDto): Promise<Recipe> => {
+  const response = await apiClient.post('/admin/recipes', data)
+  return response.data
+}
+
+export const deleteRecipe = async (id: string): Promise<void> => {
+  await apiClient.delete(`/admin/recipes/${id}`)
+}

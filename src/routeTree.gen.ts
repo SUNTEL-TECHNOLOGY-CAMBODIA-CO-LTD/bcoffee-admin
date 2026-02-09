@@ -48,9 +48,6 @@ const AuthenticatedStaffRosterLazyRouteImport = createFileRoute(
 const AuthenticatedStaffEmployeesLazyRouteImport = createFileRoute(
   '/_authenticated/staff/employees',
 )()
-const AuthenticatedSettingsUnitsLazyRouteImport = createFileRoute(
-  '/_authenticated/settings/units',
-)()
 const AuthenticatedSettingsStoreLazyRouteImport = createFileRoute(
   '/_authenticated/settings/store',
 )()
@@ -89,6 +86,12 @@ const AuthenticatedMenuCategoriesLazyRouteImport = createFileRoute(
 )()
 const AuthenticatedMenuBadgesLazyRouteImport = createFileRoute(
   '/_authenticated/menu/badges',
+)()
+const AuthenticatedInventoryUnitsLazyRouteImport = createFileRoute(
+  '/_authenticated/inventory/units',
+)()
+const AuthenticatedInventoryIngredientsLazyRouteImport = createFileRoute(
+  '/_authenticated/inventory/ingredients',
 )()
 const AuthenticatedHqOverviewLazyRouteImport = createFileRoute(
   '/_authenticated/hq/overview',
@@ -252,14 +255,6 @@ const AuthenticatedStaffEmployeesLazyRoute =
   } as any).lazy(() =>
     import('./routes/_authenticated/staff/employees.lazy').then((d) => d.Route),
   )
-const AuthenticatedSettingsUnitsLazyRoute =
-  AuthenticatedSettingsUnitsLazyRouteImport.update({
-    id: '/units',
-    path: '/units',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any).lazy(() =>
-    import('./routes/_authenticated/settings/units.lazy').then((d) => d.Route),
-  )
 const AuthenticatedSettingsStoreLazyRoute =
   AuthenticatedSettingsStoreLazyRouteImport.update({
     id: '/store',
@@ -377,6 +372,24 @@ const AuthenticatedMenuBadgesLazyRoute =
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any).lazy(() =>
     import('./routes/_authenticated/menu/badges.lazy').then((d) => d.Route),
+  )
+const AuthenticatedInventoryUnitsLazyRoute =
+  AuthenticatedInventoryUnitsLazyRouteImport.update({
+    id: '/units',
+    path: '/units',
+    getParentRoute: () => AuthenticatedInventoryRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/inventory/units.lazy').then((d) => d.Route),
+  )
+const AuthenticatedInventoryIngredientsLazyRoute =
+  AuthenticatedInventoryIngredientsLazyRouteImport.update({
+    id: '/ingredients',
+    path: '/ingredients',
+    getParentRoute: () => AuthenticatedInventoryRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/inventory/ingredients.lazy').then(
+      (d) => d.Route,
+    ),
   )
 const AuthenticatedHqOverviewLazyRoute =
   AuthenticatedHqOverviewLazyRouteImport.update({
@@ -525,6 +538,8 @@ export interface FileRoutesByFullPath {
   '/growth/promotions': typeof AuthenticatedGrowthPromotionsLazyRoute
   '/growth/vouchers': typeof AuthenticatedGrowthVouchersLazyRoute
   '/hq/overview': typeof AuthenticatedHqOverviewLazyRoute
+  '/inventory/ingredients': typeof AuthenticatedInventoryIngredientsLazyRoute
+  '/inventory/units': typeof AuthenticatedInventoryUnitsLazyRoute
   '/menu/badges': typeof AuthenticatedMenuBadgesLazyRoute
   '/menu/categories': typeof AuthenticatedMenuCategoriesLazyRoute
   '/menu/collections': typeof AuthenticatedMenuCollectionsLazyRoute
@@ -538,7 +553,6 @@ export interface FileRoutesByFullPath {
   '/settings/mobile-app': typeof AuthenticatedSettingsMobileAppLazyRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesLazyRoute
   '/settings/store': typeof AuthenticatedSettingsStoreLazyRoute
-  '/settings/units': typeof AuthenticatedSettingsUnitsLazyRoute
   '/staff/employees': typeof AuthenticatedStaffEmployeesLazyRoute
   '/staff/roster': typeof AuthenticatedStaffRosterLazyRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
@@ -577,6 +591,8 @@ export interface FileRoutesByTo {
   '/growth/promotions': typeof AuthenticatedGrowthPromotionsLazyRoute
   '/growth/vouchers': typeof AuthenticatedGrowthVouchersLazyRoute
   '/hq/overview': typeof AuthenticatedHqOverviewLazyRoute
+  '/inventory/ingredients': typeof AuthenticatedInventoryIngredientsLazyRoute
+  '/inventory/units': typeof AuthenticatedInventoryUnitsLazyRoute
   '/menu/badges': typeof AuthenticatedMenuBadgesLazyRoute
   '/menu/categories': typeof AuthenticatedMenuCategoriesLazyRoute
   '/menu/collections': typeof AuthenticatedMenuCollectionsLazyRoute
@@ -590,7 +606,6 @@ export interface FileRoutesByTo {
   '/settings/mobile-app': typeof AuthenticatedSettingsMobileAppLazyRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesLazyRoute
   '/settings/store': typeof AuthenticatedSettingsStoreLazyRoute
-  '/settings/units': typeof AuthenticatedSettingsUnitsLazyRoute
   '/staff/employees': typeof AuthenticatedStaffEmployeesLazyRoute
   '/staff/roster': typeof AuthenticatedStaffRosterLazyRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
@@ -633,6 +648,8 @@ export interface FileRoutesById {
   '/_authenticated/growth/promotions': typeof AuthenticatedGrowthPromotionsLazyRoute
   '/_authenticated/growth/vouchers': typeof AuthenticatedGrowthVouchersLazyRoute
   '/_authenticated/hq/overview': typeof AuthenticatedHqOverviewLazyRoute
+  '/_authenticated/inventory/ingredients': typeof AuthenticatedInventoryIngredientsLazyRoute
+  '/_authenticated/inventory/units': typeof AuthenticatedInventoryUnitsLazyRoute
   '/_authenticated/menu/badges': typeof AuthenticatedMenuBadgesLazyRoute
   '/_authenticated/menu/categories': typeof AuthenticatedMenuCategoriesLazyRoute
   '/_authenticated/menu/collections': typeof AuthenticatedMenuCollectionsLazyRoute
@@ -646,7 +663,6 @@ export interface FileRoutesById {
   '/_authenticated/settings/mobile-app': typeof AuthenticatedSettingsMobileAppLazyRoute
   '/_authenticated/settings/roles': typeof AuthenticatedSettingsRolesLazyRoute
   '/_authenticated/settings/store': typeof AuthenticatedSettingsStoreLazyRoute
-  '/_authenticated/settings/units': typeof AuthenticatedSettingsUnitsLazyRoute
   '/_authenticated/staff/employees': typeof AuthenticatedStaffEmployeesLazyRoute
   '/_authenticated/staff/roster': typeof AuthenticatedStaffRosterLazyRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
@@ -689,6 +705,8 @@ export interface FileRouteTypes {
     | '/growth/promotions'
     | '/growth/vouchers'
     | '/hq/overview'
+    | '/inventory/ingredients'
+    | '/inventory/units'
     | '/menu/badges'
     | '/menu/categories'
     | '/menu/collections'
@@ -702,7 +720,6 @@ export interface FileRouteTypes {
     | '/settings/mobile-app'
     | '/settings/roles'
     | '/settings/store'
-    | '/settings/units'
     | '/staff/employees'
     | '/staff/roster'
     | '/apps'
@@ -741,6 +758,8 @@ export interface FileRouteTypes {
     | '/growth/promotions'
     | '/growth/vouchers'
     | '/hq/overview'
+    | '/inventory/ingredients'
+    | '/inventory/units'
     | '/menu/badges'
     | '/menu/categories'
     | '/menu/collections'
@@ -754,7 +773,6 @@ export interface FileRouteTypes {
     | '/settings/mobile-app'
     | '/settings/roles'
     | '/settings/store'
-    | '/settings/units'
     | '/staff/employees'
     | '/staff/roster'
     | '/apps'
@@ -796,6 +814,8 @@ export interface FileRouteTypes {
     | '/_authenticated/growth/promotions'
     | '/_authenticated/growth/vouchers'
     | '/_authenticated/hq/overview'
+    | '/_authenticated/inventory/ingredients'
+    | '/_authenticated/inventory/units'
     | '/_authenticated/menu/badges'
     | '/_authenticated/menu/categories'
     | '/_authenticated/menu/collections'
@@ -809,7 +829,6 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/mobile-app'
     | '/_authenticated/settings/roles'
     | '/_authenticated/settings/store'
-    | '/_authenticated/settings/units'
     | '/_authenticated/staff/employees'
     | '/_authenticated/staff/roster'
     | '/_authenticated/apps/'
@@ -1009,13 +1028,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStaffEmployeesLazyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/settings/units': {
-      id: '/_authenticated/settings/units'
-      path: '/units'
-      fullPath: '/settings/units'
-      preLoaderRoute: typeof AuthenticatedSettingsUnitsLazyRouteImport
-      parentRoute: typeof AuthenticatedSettingsRouteRoute
-    }
     '/_authenticated/settings/store': {
       id: '/_authenticated/settings/store'
       path: '/store'
@@ -1106,6 +1118,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/menu/badges'
       preLoaderRoute: typeof AuthenticatedMenuBadgesLazyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inventory/units': {
+      id: '/_authenticated/inventory/units'
+      path: '/units'
+      fullPath: '/inventory/units'
+      preLoaderRoute: typeof AuthenticatedInventoryUnitsLazyRouteImport
+      parentRoute: typeof AuthenticatedInventoryRouteRoute
+    }
+    '/_authenticated/inventory/ingredients': {
+      id: '/_authenticated/inventory/ingredients'
+      path: '/ingredients'
+      fullPath: '/inventory/ingredients'
+      preLoaderRoute: typeof AuthenticatedInventoryIngredientsLazyRouteImport
+      parentRoute: typeof AuthenticatedInventoryRouteRoute
     }
     '/_authenticated/hq/overview': {
       id: '/_authenticated/hq/overview'
@@ -1217,6 +1243,8 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedInventoryRouteRouteChildren {
   AuthenticatedInventoryStockRouteRoute: typeof AuthenticatedInventoryStockRouteRoute
+  AuthenticatedInventoryIngredientsLazyRoute: typeof AuthenticatedInventoryIngredientsLazyRoute
+  AuthenticatedInventoryUnitsLazyRoute: typeof AuthenticatedInventoryUnitsLazyRoute
   AuthenticatedInventoryIndexRoute: typeof AuthenticatedInventoryIndexRoute
 }
 
@@ -1224,6 +1252,9 @@ const AuthenticatedInventoryRouteRouteChildren: AuthenticatedInventoryRouteRoute
   {
     AuthenticatedInventoryStockRouteRoute:
       AuthenticatedInventoryStockRouteRoute,
+    AuthenticatedInventoryIngredientsLazyRoute:
+      AuthenticatedInventoryIngredientsLazyRoute,
+    AuthenticatedInventoryUnitsLazyRoute: AuthenticatedInventoryUnitsLazyRoute,
     AuthenticatedInventoryIndexRoute: AuthenticatedInventoryIndexRoute,
   }
 
@@ -1242,7 +1273,6 @@ interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsMobileAppLazyRoute: typeof AuthenticatedSettingsMobileAppLazyRoute
   AuthenticatedSettingsRolesLazyRoute: typeof AuthenticatedSettingsRolesLazyRoute
   AuthenticatedSettingsStoreLazyRoute: typeof AuthenticatedSettingsStoreLazyRoute
-  AuthenticatedSettingsUnitsLazyRoute: typeof AuthenticatedSettingsUnitsLazyRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
   AuthenticatedSettingsFinancialCashDrawersLazyRoute: typeof AuthenticatedSettingsFinancialCashDrawersLazyRoute
 }
@@ -1262,7 +1292,6 @@ const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteCh
       AuthenticatedSettingsMobileAppLazyRoute,
     AuthenticatedSettingsRolesLazyRoute: AuthenticatedSettingsRolesLazyRoute,
     AuthenticatedSettingsStoreLazyRoute: AuthenticatedSettingsStoreLazyRoute,
-    AuthenticatedSettingsUnitsLazyRoute: AuthenticatedSettingsUnitsLazyRoute,
     AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
     AuthenticatedSettingsFinancialCashDrawersLazyRoute:
       AuthenticatedSettingsFinancialCashDrawersLazyRoute,

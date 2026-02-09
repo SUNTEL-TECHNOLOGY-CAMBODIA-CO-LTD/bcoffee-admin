@@ -274,7 +274,10 @@ export function CategorySheet({
                     <SelectContent>
                       <SelectItem value='none'>None</SelectItem>
                       {categories?.map((category: Category) => (
-                        <SelectItem key={category.id} value={category.id}>
+                        <SelectItem
+                          key={category.id}
+                          value={category.id || `cat-${category.slug}`}
+                        >
                           {category.name['en']}
                         </SelectItem>
                       ))}

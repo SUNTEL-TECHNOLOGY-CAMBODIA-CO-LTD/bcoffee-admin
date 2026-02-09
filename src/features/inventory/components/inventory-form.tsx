@@ -162,7 +162,7 @@ export function InventoryForm({ onSubmit }: InventoryFormProps) {
             name='price'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Price Override</FormLabel>
+                <FormLabel>Price/Unit</FormLabel>
                 <FormControl>
                   <Input
                     type='number'

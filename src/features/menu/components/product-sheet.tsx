@@ -1,14 +1,20 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { type z } from 'zod'
-import { useForm, useFieldArray, useWatch } from 'react-hook-form'
+import {
+  useForm,
+  useFieldArray,
+  useWatch,
+  type Resolver,
+} from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   type OptionGroup,
   type OptionChoice,
   type CreateProductRequest,
 } from '@/types/api'
+import { type Ingredient } from '@/types/inventory'
 import _ from 'lodash'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { calculateRecipeCost, calculateMargin } from '@/utils/cost-engine'
 import { formatCurrency } from '@/utils/format'
@@ -18,7 +24,9 @@ import {
   useUpdateProduct,
   useOptionGroups,
 } from '@/hooks/queries/use-catalog'
+import { useIngredients } from '@/hooks/queries/use-inventory'
 import { Badge } from '@/components/ui/badge'
+import { BrandLoader } from '@/components/ui/brand-loader'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -54,14 +62,79 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { MultiLangImageUpload } from '@/components/custom/multi-lang-image-upload'
 import { MultiLangInput } from '@/components/custom/multi-lang-input'
 import { MultiLangTextarea } from '@/components/custom/multi-lang-textarea'
-import { MOCK_INGREDIENTS } from '../data/mock-ingredients'
 import {
-  type Category,
+  OptionType,
   productSchema,
   ProductStatus,
   type Product,
-  OptionType,
+  type Category,
+  type ProductOptionChoice,
 } from '../data/schema'
+import { RecipeRow, RecipeUnitSuffix, RecipeCostBadge } from './recipe-row'
+
+type ProductFormValues = z.infer<typeof productSchema>
+
+// RecipeRow, RecipeUnitSuffix, RecipeCostBadge moved to ./recipe-row.tsx
+
+function VirtualInheritedRow({
+  ingredientId,
+  baseQuantity,
+  ingredients,
+  onOverride,
+}: {
+  ingredientId: string
+  baseQuantity: number
+  ingredients?: Ingredient[]
+  onOverride: (quantity: number) => void
+}) {
+  const [val, setVal] = useState(baseQuantity)
+
+  return (
+    <div className='flex items-end gap-3 pl-2 opacity-80 transition-opacity hover:opacity-100'>
+      <div className='flex min-w-0 flex-1 items-end gap-2'>
+        <div className='flex-1 space-y-2'>
+          <Select disabled value={ingredientId}>
+            <SelectTrigger className='bg-muted/50'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ingredients?.map((ingredient) => (
+                <SelectItem key={ingredient.id} value={ingredient.id}>
+                  {ingredient.name?.['en'] || ingredient.sku || 'Unknown'}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <RecipeCostBadge
+          ingredientId={ingredientId}
+          quantity={val}
+          ingredients={ingredients}
+        />
+      </div>
+
+      <div className='w-32 shrink-0 space-y-2'>
+        <div className='flex items-center gap-1.5'>
+          <Input
+            type='number'
+            value={val}
+            onChange={(e) => {
+              const n = Number(e.target.value)
+              setVal(n)
+              onOverride(n)
+            }}
+            className='w-20 [appearance:textfield] border-dashed text-right [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+          />
+          <RecipeUnitSuffix
+            ingredientId={ingredientId}
+            ingredients={ingredients}
+          />
+        </div>
+      </div>
+      <div className='flex h-9 w-9 shrink-0 items-center justify-center' />
+    </div>
+  )
+}
 
 function OptionGroupDetails({ group }: { group: OptionGroup }) {
   if (!group?.choices?.length) {
@@ -103,14 +176,15 @@ export function ProductSheet({
 }: ProductSheetProps) {
   const { data: categories } = useCategories()
   const { data: optionGroups } = useOptionGroups()
+  const { data: ingredients } = useIngredients()
   const { mutate: createProduct, isPending: isCreating } = useCreateProduct()
   const { mutate: updateProduct, isPending: isUpdating } = useUpdateProduct()
 
   // Removed unused isPending variable if it's not used in UI or use it if needed.
   const isPending = isCreating || isUpdating
 
-  const form = useForm<z.input<typeof productSchema>, unknown, Product>({
-    resolver: zodResolver(productSchema),
+  const form = useForm<ProductFormValues>({
+    resolver: zodResolver(productSchema) as Resolver<ProductFormValues>,
     defaultValues: product || {
       name: { en: '' },
       description: { en: '' },
@@ -126,6 +200,7 @@ export function ProductSheet({
             sku: '',
             name: { en: 'Standard' },
             price: 0,
+            recipes: [],
           },
         ],
       },
@@ -157,6 +232,7 @@ export function ProductSheet({
                 sku: '',
                 name: { en: 'Standard' },
                 price: 0,
+                recipes: [],
               },
             ],
           },
@@ -192,27 +268,100 @@ export function ProductSheet({
     name: 'recipes',
   })
 
+  const choicesValue = useWatch({
+    control: form.control,
+    name: 'price.choices',
+  })
+  const choices = useMemo(() => choicesValue || [], [choicesValue])
+
   // Watch recipe fields and price for live cost calculation
   const recipeItems = useWatch({ control: form.control, name: 'recipes' })
   // For cost calc, if single price, use that. If variant, maybe use lowest?
   // Let's just use the first choice's price for now as a rough estimate or 0.
   const priceData = useWatch({ control: form.control, name: 'price' })
-  const estimatedPrice = Number(priceData?.choices?.[0]?.price) || 0
 
-  const ingredientsWithCost =
-    recipeItems?.map((item) => {
-      const ingredient = MOCK_INGREDIENTS.find(
-        (i) => i.id === item.ingredientId
-      )
+  // Calculate costs per variant (or just base if no variants)
+  const variantMetrics = useMemo(() => {
+    if (!recipeItems) return []
+
+    // 1. Identify Base Ingredients
+    const baseItems = recipeItems.filter((i) => !i.optionId)
+    const baseIngredientsWithCost = baseItems.map((item) => {
+      const ingredient = ingredients?.find((i) => i.id === item.ingredientId)
       return {
         ingredientId: item.ingredientId,
         quantityUsed: Number(item.quantity || 0),
-        costPerUnit: ingredient?.costPerUnit || 0,
+        costPerUnit: ingredient?.cost || 0,
       }
-    }) || []
+    })
 
-  const totalCost = calculateRecipeCost(ingredientsWithCost)
-  const margin = calculateMargin(estimatedPrice, totalCost)
+    // If no variants, just return base metrics
+    if (!choices || choices.length <= 1) {
+      const cost = calculateRecipeCost(baseIngredientsWithCost)
+      const price = Number(priceData?.choices?.[0]?.price) || 0
+      const margin = calculateMargin(price, cost)
+      return [{ name: 'Base', cost, margin, price, id: 'base' }]
+    }
+
+    // 2. Calculate for each variant
+    return choices.map((choice: ProductOptionChoice, index: number) => {
+      const choiceId = choice.id || choice.sku || `variant-${index}`
+      const price = Number(choice.price) || 0
+
+      // Start with base ingredients
+      const currentIngredients = [...baseIngredientsWithCost]
+
+      // Apply Overrides & Special Ingredients
+      const variantItems = recipeItems.filter((i) => i.optionId === choiceId)
+
+      variantItems.forEach((vItem) => {
+        const ingredient = ingredients?.find((i) => i.id === vItem.ingredientId)
+        const vItemCost = {
+          ingredientId: vItem.ingredientId,
+          quantityUsed: Number(vItem.quantity || 0),
+          costPerUnit: ingredient?.cost || 0,
+        }
+
+        // Check if it's an override (exists in base)
+        const baseIndex = currentIngredients.findIndex(
+          (b) => b.ingredientId === vItem.ingredientId
+        )
+
+        if (baseIndex !== -1) {
+          // Replace base with override
+          currentIngredients[baseIndex] = vItemCost
+        } else {
+          // Add as special ingredient
+          currentIngredients.push(vItemCost)
+        }
+      })
+
+      const cost = calculateRecipeCost(currentIngredients)
+      const margin = calculateMargin(price, cost)
+      return {
+        name: choice.name['en'] || `Variant ${index + 1}`,
+        cost,
+        margin,
+        price,
+        id: choiceId,
+      }
+    })
+  }, [recipeItems, choices, priceData, ingredients])
+
+  // Derived Summary Metrics
+  const hasMetrics = variantMetrics.length > 0
+  const minCost = hasMetrics
+    ? Math.min(...variantMetrics.map((v) => v.cost))
+    : 0
+  const maxCost = hasMetrics
+    ? Math.max(...variantMetrics.map((v) => v.cost))
+    : 0
+  const minMargin = hasMetrics
+    ? Math.min(...variantMetrics.map((v) => v.margin))
+    : 0
+  const maxMargin = hasMetrics
+    ? Math.max(...variantMetrics.map((v) => v.margin))
+    : 0
 
   function onSubmit(data: z.infer<typeof productSchema>) {
     if (product?.id) {
@@ -356,7 +505,7 @@ export function ProductSheet({
                     </div>
 
                     {/* Variants List */}
-                    {(form.watch('price.choices') || []).map((_, index) => (
+                    {choices.map((_, index) => (
                       <div
                         key={index}
                         className='grid grid-cols-12 items-end gap-2 p-2'
@@ -440,7 +589,7 @@ export function ProductSheet({
                         const parentSku = form.getValues('sku')
                         const newSku = parentSku
                           ? `${parentSku}-${choices.length + 1}`
-                          : ''
+                          : `VAR-${choices.length + 1}`
 
                         form.setValue('price.choices', [
                           ...choices,
@@ -448,6 +597,7 @@ export function ProductSheet({
                             sku: newSku,
                             name: { en: '' },
                             price: 0,
+                            recipes: [],
                           },
                         ])
                       }}
@@ -475,7 +625,10 @@ export function ProductSheet({
                           </FormControl>
                           <SelectContent>
                             {categories?.map((category: Category) => (
-                              <SelectItem key={category.id} value={category.id}>
+                              <SelectItem
+                                key={category.id}
+                                value={category.id || `cat-${category.slug}`}
+                              >
                                 {category.name['en']}
                               </SelectItem>
                             ))}
@@ -611,141 +764,250 @@ export function ProductSheet({
               </TabsContent>
 
               <TabsContent value='recipes' className='space-y-4 py-4'>
-                <Card>
-                  <CardHeader className='pb-2'>
-                    <CardTitle className='text-sm font-medium'>
-                      Cost Summary
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className='grid grid-cols-2 gap-4'>
-                      <div>
-                        <div className='text-2xl font-bold'>
-                          ${totalCost.toFixed(2)}
-                        </div>
-                        <p className='text-xs text-muted-foreground'>
-                          Total Ingredient Cost
-                        </p>
-                      </div>
-                      <div>
-                        <div
-                          className={`text-2xl font-bold ${
-                            margin < 60
-                              ? 'text-red-500'
-                              : margin > 70
-                                ? 'text-green-500'
-                                : ''
-                          }`}
-                        >
-                          {margin}%
-                        </div>
-                        <p className='text-xs text-muted-foreground'>
-                          Gross Margin
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <div className='flex items-center justify-between'>
-                  <div className='space-y-1'>
-                    <h3 className='text-lg font-medium'>Product Recipe</h3>
-                    <p className='text-sm text-muted-foreground'>
-                      Define the standard consumption for this product.
-                      Modifiers (e.g., &apos;Extra Shot&apos;) are configured
-                      separately in Option Groups.
-                    </p>
+                {!categories || !optionGroups ? (
+                  <div className='flex h-60 items-center justify-center'>
+                    <BrandLoader />
                   </div>
-                  <Button
-                    type='button'
-                    variant='outline'
-                    size='sm'
-                    onClick={() => append({ ingredientId: '', quantity: 0 })}
-                  >
-                    Add Ingredient
-                  </Button>
-                </div>
-                <div className='space-y-4'>
-                  {fields.map((field, index) => (
-                    <div key={field.id} className='flex items-end gap-4'>
-                      <FormField
-                        control={form.control}
-                        name={`recipes.${index}.ingredientId`}
-                        render={({ field }) => (
-                          <FormItem className='flex-1'>
-                            <FormLabel className={index !== 0 ? 'sr-only' : ''}>
-                              Ingredient
-                            </FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder='Select ingredient' />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {MOCK_INGREDIENTS.map((ingredient) => (
-                                  <SelectItem
-                                    key={ingredient.id}
-                                    value={ingredient.id}
-                                  >
-                                    {ingredient.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`recipes.${index}.quantity`}
-                        render={({ field }) => (
-                          <FormItem className='w-32'>
-                            <FormLabel className={index !== 0 ? 'sr-only' : ''}>
-                              Quantity
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                type='number'
-                                {...field}
-                                value={field.value as number | string}
-                                onChange={(e) =>
-                                  field.onChange(Number(e.target.value))
-                                }
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <div className='w-16 pb-2.5 text-sm text-muted-foreground'>
-                        {MOCK_INGREDIENTS.find(
-                          (i) =>
-                            i.id === form.watch(`recipes.${index}.ingredientId`)
-                        )?.unit || '-'}
+                ) : (
+                  <>
+                    <Card>
+                      <CardHeader className='pb-2'>
+                        <CardTitle className='text-sm font-medium'>
+                          Cost Summary
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className='grid grid-cols-2 gap-4'>
+                          <div>
+                            <div className='flex items-baseline gap-1'>
+                              <span className='text-2xl font-bold'>
+                                {minCost === maxCost
+                                  ? `$${minCost.toFixed(2)}`
+                                  : `$${minCost.toFixed(2)} - $${maxCost.toFixed(2)}`}
+                              </span>
+                            </div>
+                            <p className='text-xs text-muted-foreground'>
+                              {minCost === maxCost
+                                ? 'Total Ingredient Cost'
+                                : 'Ingredient Cost Range'}
+                            </p>
+                          </div>
+                          <div>
+                            <div className='flex items-baseline gap-1'>
+                              <span
+                                className={`text-2xl font-bold ${
+                                  minMargin < 60
+                                    ? 'text-red-500'
+                                    : minMargin > 70
+                                      ? 'text-green-500'
+                                      : ''
+                                }`}
+                              >
+                                {minMargin === maxMargin
+                                  ? `${minMargin}%`
+                                  : `${minMargin}% - ${maxMargin}%`}
+                              </span>
+                            </div>
+                            <p className='text-xs text-muted-foreground'>
+                              {minMargin === maxMargin
+                                ? 'Gross Margin'
+                                : 'Margin Range'}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <div className='flex items-center justify-between'>
+                      <div className='space-y-1'>
+                        <h3 className='text-lg font-medium'>Product Recipe</h3>
+                        <p className='text-sm text-muted-foreground'>
+                          Define ingredient consumption. Base ingredients are
+                          inherited by all variants.
+                        </p>
                       </div>
                       <Button
                         type='button'
-                        variant='ghost'
-                        size='icon'
-                        onClick={() => remove(index)}
-                        className='mb-0.5'
+                        variant='outline'
+                        size='sm'
+                        onClick={() =>
+                          append({
+                            ingredientId: '',
+                            quantity: 0,
+                            optionId: '',
+                          })
+                        }
                       >
-                        <span className='sr-only'>Remove</span>
-                        &times;
+                        <Plus className='mr-1 h-3 w-3' /> Add Ingredient
                       </Button>
                     </div>
-                  ))}
-                  {fields.length === 0 && (
-                    <div className='flex h-24 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground'>
-                      No ingredients added yet.
+
+                    <div className='space-y-8'>
+                      {/* Base Product Section */}
+                      <div className='space-y-3'>
+                        <div className='flex items-center justify-between'>
+                          <Badge variant='secondary' className='mb-1'>
+                            Base Product
+                          </Badge>
+                        </div>
+                        {fields.filter((f) => !f.optionId).length === 0 && (
+                          <p className='pl-2 text-xs text-muted-foreground italic'>
+                            No base ingredients.
+                          </p>
+                        )}
+                        {fields.map((field, index) => {
+                          if (field.optionId && field.optionId !== '')
+                            return null
+                          return (
+                            <RecipeRow
+                              key={field.id}
+                              index={index}
+                              control={form.control}
+                              ingredients={ingredients}
+                              onRemove={() => remove(index)}
+                            />
+                          )
+                        })}
+                      </div>
+
+                      {/* Variants Sections - Smart Visibility */}
+                      {choices.length > 1 &&
+                        choices.map(
+                          (choice: ProductOptionChoice, cIndex: number) => {
+                            const choiceId =
+                              choice.id || choice.sku || `variant-${cIndex}`
+                            const rowsWithLiveValues = fields.map((f, i) => ({
+                              ...f,
+                              ...(recipeItems?.[i] || {}), // Merge live values from useWatch
+                              originalIndex: i,
+                            }))
+                            const baseRows = rowsWithLiveValues.filter(
+                              (f) => !f.optionId
+                            )
+
+                            const variantSpecificRows =
+                              rowsWithLiveValues.filter(
+                                (f) =>
+                                  f.optionId === choiceId &&
+                                  !baseRows.some(
+                                    (b) => b.ingredientId === f.ingredientId
+                                  )
+                              )
+
+                            return (
+                              <div
+                                key={choiceId || cIndex}
+                                className='space-y-3'
+                              >
+                                <div className='flex items-center justify-between gap-2 border-t border-dashed pt-4'>
+                                  <Badge variant='secondary' className='mb-1'>
+                                    {choice.name['en'] ||
+                                      `Variant ${cIndex + 1}`}
+                                  </Badge>
+                                  {(() => {
+                                    const metric = variantMetrics.find(
+                                      (m) => m.id === choiceId
+                                    )
+                                    if (!metric) return null
+                                    return (
+                                      <span className='text-xs text-muted-foreground'>
+                                        <span className='font-medium text-foreground'>
+                                          ${metric.cost.toFixed(2)}
+                                        </span>{' '}
+                                        cost •{' '}
+                                        <span
+                                          className={
+                                            metric.margin < 60
+                                              ? 'font-medium text-red-500'
+                                              : metric.margin > 70
+                                                ? 'font-medium text-green-500'
+                                                : 'font-medium text-foreground'
+                                          }
+                                        >
+                                          {metric.margin}%
+                                        </span>{' '}
+                                        margin
+                                      </span>
+                                    )
+                                  })()}
+                                  <Button
+                                    type='button'
+                                    variant='ghost'
+                                    size='sm'
+                                    className='h-7 px-2 text-xs text-primary'
+                                    onClick={() =>
+                                      append({
+                                        ingredientId: '',
+                                        quantity: 0,
+                                        optionId: choiceId,
+                                      })
+                                    }
+                                  >
+                                    <Plus className='mr-1 h-3 w-3' /> Add
+                                    Special Ingredient
+                                  </Button>
+                                </div>
+
+                                <div className='space-y-3'>
+                                  {/* Inherited / Overrides */}
+                                  {baseRows.map((baseItem) => {
+                                    const overrideIdx = fields.findIndex(
+                                      (f) =>
+                                        f.optionId === choiceId &&
+                                        f.ingredientId === baseItem.ingredientId
+                                    )
+
+                                    if (overrideIdx !== -1) {
+                                      return (
+                                        <RecipeRow
+                                          key={`override-${choiceId}-${fields[overrideIdx].ingredientId}-${overrideIdx}`}
+                                          index={overrideIdx}
+                                          control={form.control}
+                                          ingredients={ingredients}
+                                          isFixedIngredient={true}
+                                          onRemove={() => remove(overrideIdx)}
+                                        />
+                                      )
+                                    }
+
+                                    return (
+                                      <VirtualInheritedRow
+                                        key={`virtual-${choiceId}-${baseItem.ingredientId}`}
+                                        ingredientId={baseItem.ingredientId}
+                                        baseQuantity={Number(baseItem.quantity)}
+                                        ingredients={ingredients}
+                                        onOverride={(newQty: number) =>
+                                          append({
+                                            ingredientId: baseItem.ingredientId,
+                                            quantity: newQty,
+                                            optionId: choiceId,
+                                          })
+                                        }
+                                      />
+                                    )
+                                  })}
+
+                                  {/* Variant-Specific (non-base) */}
+                                  {variantSpecificRows.map((vRow) => (
+                                    <RecipeRow
+                                      key={`special-${choiceId}-${vRow.id}`}
+                                      index={vRow.originalIndex}
+                                      control={form.control}
+                                      ingredients={ingredients}
+                                      isFixedIngredient={false}
+                                      onRemove={() =>
+                                        remove(vRow.originalIndex)
+                                      }
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            )
+                          }
+                        )}
                     </div>
-                  )}
-                </div>
+                  </>
+                )}
               </TabsContent>
             </Tabs>
 

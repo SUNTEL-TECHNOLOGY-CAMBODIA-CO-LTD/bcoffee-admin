@@ -96,7 +96,6 @@ export const sidebarData: SidebarData = {
           items: [
             { title: 'Store Profile', url: '/settings/store' },
             { title: 'Financials', url: '/settings/financial' },
-            { title: 'Units', url: '/settings/units' },
           ],
         },
       ],

@@ -1,3 +1,4 @@
+import { OptionType } from '@/types/api'
 import { type Product, ProductStatus } from './schema'
 
 export const MOCK_PRODUCTS: Product[] = [
@@ -5,33 +6,43 @@ export const MOCK_PRODUCTS: Product[] = [
     id: 'prod_latte',
     name: { en: 'Latte' },
     sku: 'LATTE-001',
-    price: 4.5,
+    price: {
+      name: { en: 'Size' },
+      type: OptionType.VARIANT,
+      sku: 'LATTE-VAR',
+      minSelect: 1,
+      maxSelect: 1,
+      choices: [
+        { id: 'opt_small', sku: 'LAT-S', name: { en: 'Small' }, price: 3.5 },
+        { id: 'opt_large', sku: 'LAT-L', name: { en: 'Large' }, price: 4.5 },
+      ],
+    },
+    priceGroupId: '',
     categoryId: '2', // Hot Coffee
     status: ProductStatus.ACTIVE,
-    optionGroups: ['grp_milk_alt', 'grp_syrups'],
+    optionGroupIds: ['grp_milk_alt', 'grp_syrups'],
     recipes: [
-      { ingredientId: 'ing_beans', quantity: 18 },
-      { ingredientId: 'ing_milk', quantity: 250 },
+      { ingredientId: 'ing_beans', quantity: 18 }, // Base
+      { ingredientId: 'ing_milk', quantity: 200, optionId: 'opt_small' },
+      { ingredientId: 'ing_milk', quantity: 300, optionId: 'opt_large' },
     ],
   },
   {
     id: 'prod_espresso',
     name: { en: 'Espresso' },
     sku: 'ESP-001',
-    price: 3.0,
+    price: {
+      name: { en: 'Standard' },
+      type: OptionType.VARIANT,
+      sku: 'ESP-VAR',
+      minSelect: 1,
+      maxSelect: 1,
+      choices: [{ sku: 'ESP-STD', name: { en: 'Standard' }, price: 3.0 }],
+    },
+    priceGroupId: '',
     categoryId: '2', // Hot Coffee
     status: ProductStatus.ACTIVE,
-    optionGroups: [],
+    optionGroupIds: [],
     recipes: [{ ingredientId: 'ing_beans', quantity: 18 }],
-  },
-  {
-    id: 'prod_croissant',
-    name: { en: 'Croissant' },
-    sku: 'PAST-001',
-    price: 3.5,
-    categoryId: '4', // Pastries
-    status: ProductStatus.DRAFT,
-    optionGroups: [],
-    recipes: [],
   },
 ]
