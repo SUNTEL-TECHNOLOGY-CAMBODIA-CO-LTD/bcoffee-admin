@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { PageTitle } from '@/components/page-title'
-import { ActiveCartsTable } from '../components/active-carts-table'
-import { CartDetailSheet } from '../components/cart-detail-sheet'
+import { ActiveCartsTable } from '../_components/active-carts-table'
+import { CartDetailSheet } from '../_components/cart-detail-sheet'
 import { type Cart } from '../data/cart-schema'
 import { MOCK_CARTS } from '../data/mock-carts'
 

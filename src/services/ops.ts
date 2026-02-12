@@ -6,7 +6,56 @@ import {
   type AdjustStockRequest,
   type PaginationMeta,
 } from '@/types/api'
+import {
+  type StaffShift,
+  type CashDrawerSession,
+  type StartShiftRequest,
+  type EndShiftRequest,
+  type OpenDrawerRequest,
+  type CloseDrawerRequest,
+} from '@/types/ops'
 import { apiClient } from '@/lib/api-client'
+
+export const startShift = async (
+  data: StartShiftRequest
+): Promise<StaffShift> => {
+  const response = await apiClient.post('/admin/shifts/start', data)
+  return response.data
+}
+
+export const endShift = async (data: EndShiftRequest): Promise<StaffShift> => {
+  const response = await apiClient.post('/admin/shifts/end', data)
+  return response.data
+}
+
+export const getCurrentShift = async (): Promise<StaffShift | null> => {
+  const response = await apiClient.get('/admin/shifts/current')
+  return response.data
+}
+
+// Cash Drawer
+export const openDrawer = async (
+  data: OpenDrawerRequest
+): Promise<CashDrawerSession> => {
+  const response = await apiClient.post('/admin/cash-drawer/open', data)
+  return response.data
+}
+
+export const closeDrawer = async (
+  data: CloseDrawerRequest
+): Promise<CashDrawerSession> => {
+  const response = await apiClient.post('/admin/cash-drawer/close', data)
+  return response.data
+}
+
+export const getCurrentDrawerSession = async (
+  shopId: string
+): Promise<CashDrawerSession | null> => {
+  const response = await apiClient.get(
+    `/admin/shops/${shopId}/cash-drawer/current`
+  )
+  return response.data
+}
 
 // Orders
 export const getOrders = async (

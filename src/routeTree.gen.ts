@@ -37,7 +37,9 @@ import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
+import { Route as AuthenticatedOpsSessionRouteRouteImport } from './routes/_authenticated/ops/session/route'
 import { Route as AuthenticatedInventoryStockRouteRouteImport } from './routes/_authenticated/inventory/stock/route'
+import { Route as AuthenticatedOpsSessionIndexRouteImport } from './routes/_authenticated/ops/session/index'
 
 const AuthenticatedOperationsIndexLazyRouteImport = createFileRoute(
   '/_authenticated/operations/',
@@ -475,6 +477,12 @@ const AuthenticatedErrorsErrorRoute =
     path: '/errors/$error',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedOpsSessionRouteRoute =
+  AuthenticatedOpsSessionRouteRouteImport.update({
+    id: '/ops/session',
+    path: '/ops/session',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedInventoryStockRouteRoute =
   AuthenticatedInventoryStockRouteRouteImport.update({
     id: '/stock',
@@ -501,6 +509,12 @@ const AuthenticatedGrowthReviewsIndexLazyRoute =
       (d) => d.Route,
     ),
   )
+const AuthenticatedOpsSessionIndexRoute =
+  AuthenticatedOpsSessionIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedOpsSessionRouteRoute,
+  } as any)
 const AuthenticatedSettingsFinancialCashDrawersLazyRoute =
   AuthenticatedSettingsFinancialCashDrawersLazyRouteImport.update({
     id: '/financial/cash-drawers',
@@ -527,6 +541,7 @@ export interface FileRoutesByFullPath {
   '/503': typeof errors503Route
   '/': typeof AuthenticatedIndexRoute
   '/inventory/stock': typeof AuthenticatedInventoryStockRouteRoute
+  '/ops/session': typeof AuthenticatedOpsSessionRouteRouteWithChildren
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -564,6 +579,7 @@ export interface FileRoutesByFullPath {
   '/users': typeof AuthenticatedUsersIndexRoute
   '/operations': typeof AuthenticatedOperationsIndexLazyRoute
   '/settings/financial/cash-drawers': typeof AuthenticatedSettingsFinancialCashDrawersLazyRoute
+  '/ops/session/': typeof AuthenticatedOpsSessionIndexRoute
   '/growth/reviews': typeof AuthenticatedGrowthReviewsIndexLazyRoute
   '/menu/availability': typeof AuthenticatedMenuAvailabilityIndexLazyRoute
 }
@@ -617,6 +633,7 @@ export interface FileRoutesByTo {
   '/users': typeof AuthenticatedUsersIndexRoute
   '/operations': typeof AuthenticatedOperationsIndexLazyRoute
   '/settings/financial/cash-drawers': typeof AuthenticatedSettingsFinancialCashDrawersLazyRoute
+  '/ops/session': typeof AuthenticatedOpsSessionIndexRoute
   '/growth/reviews': typeof AuthenticatedGrowthReviewsIndexLazyRoute
   '/menu/availability': typeof AuthenticatedMenuAvailabilityIndexLazyRoute
 }
@@ -637,6 +654,7 @@ export interface FileRoutesById {
   '/(errors)/503': typeof errors503Route
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/inventory/stock': typeof AuthenticatedInventoryStockRouteRoute
+  '/_authenticated/ops/session': typeof AuthenticatedOpsSessionRouteRouteWithChildren
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -674,6 +692,7 @@ export interface FileRoutesById {
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
   '/_authenticated/operations/': typeof AuthenticatedOperationsIndexLazyRoute
   '/_authenticated/settings/financial/cash-drawers': typeof AuthenticatedSettingsFinancialCashDrawersLazyRoute
+  '/_authenticated/ops/session/': typeof AuthenticatedOpsSessionIndexRoute
   '/_authenticated/growth/reviews/': typeof AuthenticatedGrowthReviewsIndexLazyRoute
   '/_authenticated/menu/availability/': typeof AuthenticatedMenuAvailabilityIndexLazyRoute
 }
@@ -694,6 +713,7 @@ export interface FileRouteTypes {
     | '/503'
     | '/'
     | '/inventory/stock'
+    | '/ops/session'
     | '/errors/$error'
     | '/settings/account'
     | '/settings/appearance'
@@ -731,6 +751,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/operations'
     | '/settings/financial/cash-drawers'
+    | '/ops/session/'
     | '/growth/reviews'
     | '/menu/availability'
   fileRoutesByTo: FileRoutesByTo
@@ -784,6 +805,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/operations'
     | '/settings/financial/cash-drawers'
+    | '/ops/session'
     | '/growth/reviews'
     | '/menu/availability'
   id:
@@ -803,6 +825,7 @@ export interface FileRouteTypes {
     | '/(errors)/503'
     | '/_authenticated/'
     | '/_authenticated/inventory/stock'
+    | '/_authenticated/ops/session'
     | '/_authenticated/errors/$error'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
@@ -840,6 +863,7 @@ export interface FileRouteTypes {
     | '/_authenticated/users/'
     | '/_authenticated/operations/'
     | '/_authenticated/settings/financial/cash-drawers'
+    | '/_authenticated/ops/session/'
     | '/_authenticated/growth/reviews/'
     | '/_authenticated/menu/availability/'
   fileRoutesById: FileRoutesById
@@ -1210,6 +1234,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedErrorsErrorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ops/session': {
+      id: '/_authenticated/ops/session'
+      path: '/ops/session'
+      fullPath: '/ops/session'
+      preLoaderRoute: typeof AuthenticatedOpsSessionRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/inventory/stock': {
       id: '/_authenticated/inventory/stock'
       path: '/stock'
@@ -1230,6 +1261,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/growth/reviews'
       preLoaderRoute: typeof AuthenticatedGrowthReviewsIndexLazyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ops/session/': {
+      id: '/_authenticated/ops/session/'
+      path: '/'
+      fullPath: '/ops/session/'
+      preLoaderRoute: typeof AuthenticatedOpsSessionIndexRouteImport
+      parentRoute: typeof AuthenticatedOpsSessionRouteRoute
     }
     '/_authenticated/settings/financial/cash-drawers': {
       id: '/_authenticated/settings/financial/cash-drawers'
@@ -1302,10 +1340,25 @@ const AuthenticatedSettingsRouteRouteWithChildren =
     AuthenticatedSettingsRouteRouteChildren,
   )
 
+interface AuthenticatedOpsSessionRouteRouteChildren {
+  AuthenticatedOpsSessionIndexRoute: typeof AuthenticatedOpsSessionIndexRoute
+}
+
+const AuthenticatedOpsSessionRouteRouteChildren: AuthenticatedOpsSessionRouteRouteChildren =
+  {
+    AuthenticatedOpsSessionIndexRoute: AuthenticatedOpsSessionIndexRoute,
+  }
+
+const AuthenticatedOpsSessionRouteRouteWithChildren =
+  AuthenticatedOpsSessionRouteRoute._addFileChildren(
+    AuthenticatedOpsSessionRouteRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedInventoryRouteRoute: typeof AuthenticatedInventoryRouteRouteWithChildren
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedOpsSessionRouteRoute: typeof AuthenticatedOpsSessionRouteRouteWithChildren
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedGrowthAnnouncementsLazyRoute: typeof AuthenticatedGrowthAnnouncementsLazyRoute
   AuthenticatedGrowthCustomersLazyRoute: typeof AuthenticatedGrowthCustomersLazyRoute
@@ -1338,6 +1391,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedInventoryRouteRouteWithChildren,
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedOpsSessionRouteRoute:
+    AuthenticatedOpsSessionRouteRouteWithChildren,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedGrowthAnnouncementsLazyRoute:
     AuthenticatedGrowthAnnouncementsLazyRoute,

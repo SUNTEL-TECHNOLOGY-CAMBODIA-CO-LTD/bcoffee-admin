@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { type Order } from '@/types/orders'
 import { PageTitle } from '@/components/page-title'
-import { OrderDetailsSheet } from '../components/order-details-sheet'
-import { OrderHistoryTable } from '../components/order-history-table'
+import { OrderDetailsSheet } from '../_components/order-details-sheet'
+import { OrderHistoryTable } from '../_components/order-history-table'
 import { MOCK_ORDER_HISTORY } from '../data/mock-order-history'
 
 export default function OrdersPage() {

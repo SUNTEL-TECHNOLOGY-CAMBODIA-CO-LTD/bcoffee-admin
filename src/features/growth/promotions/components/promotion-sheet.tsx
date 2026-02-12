@@ -1,12 +1,12 @@
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { DiscountType, type Promotion, PromotionScope } from '@/types/growth'
+import { DiscountType, type Promotion } from '@/types/growth'
+import { PromotionRuleType, PromotionOperator } from '@/types/promotions'
 import { Button } from '@/components/ui/button'
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -14,30 +14,37 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import { PromotionBuilder } from './promotion-builder'
 
 const promotionSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   code: z.string().optional(),
-  type: z.nativeEnum(DiscountType),
-  value: z.number().min(0, 'Value must be positive'),
-  scope: z.nativeEnum(PromotionScope),
-  targetSku: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   budgetLimitAmount: z.number().optional(),
+  // New Metadata Structure
+  metadata: z.object({
+    trigger: z.object({
+      ruleType: z.nativeEnum(PromotionRuleType),
+      operator: z.nativeEnum(PromotionOperator),
+      value: z.number().min(0),
+      targetIds: z.array(z.string()).optional(),
+    }),
+    action: z.object({
+      actionType: z.nativeEnum(DiscountType),
+      value: z.number().min(0),
+      applyToId: z.string().optional(),
+    }),
+    excludeDirty: z.boolean(),
+    priority: z.number().min(0).max(100),
+    isStackable: z.boolean(),
+  }),
 })
 
 type PromotionFormValues = z.infer<typeof promotionSchema>
@@ -58,17 +65,27 @@ export function PromotionSheet({
     defaultValues: {
       name: initialData?.name.en || '',
       code: initialData?.code || '',
-      type: initialData?.type || DiscountType.PERCENTAGE,
-      value: initialData?.value ?? 0,
-      scope: initialData?.scope || PromotionScope.CART,
-      targetSku: initialData?.targetSku || '',
       startDate: initialData?.startDate || '',
       endDate: initialData?.endDate || '',
       budgetLimitAmount: initialData?.budgetLimitAmount ?? undefined,
+      metadata: {
+        trigger: {
+          ruleType: PromotionRuleType.CART_SUBTOTAL,
+          operator: PromotionOperator.GTE,
+          value: 0,
+          targetIds: [],
+        },
+        action: {
+          actionType: DiscountType.PERCENTAGE,
+          value: 0,
+          applyToId: '',
+        },
+        excludeDirty: false,
+        priority: 0,
+        isStackable: false,
+      },
     },
   })
-
-  const watchScope = form.watch('scope')
 
   function onSubmit(data: PromotionFormValues) {
     // eslint-disable-next-line no-console
@@ -79,13 +96,13 @@ export function PromotionSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className='flex w-full flex-col gap-6 overflow-y-auto p-4 sm:max-w-md'>
+      <SheetContent className='flex w-full flex-col gap-6 overflow-y-auto p-4 sm:max-w-2xl'>
         <SheetHeader>
           <SheetTitle>
             {initialData ? 'Edit Promotion' : 'New Promotion'}
           </SheetTitle>
           <SheetDescription>
-            Create or edit a marketing campaign.
+            Create or edit a marketing campaign using the rule builder.
           </SheetDescription>
         </SheetHeader>
 
@@ -94,62 +111,16 @@ export function PromotionSheet({
             onSubmit={form.handleSubmit(onSubmit)}
             className='flex flex-col gap-6'
           >
-            <FormField
-              control={form.control}
-              name='name'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Campaign Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder='e.g. Summer Sale' {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name='code'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Promo Code (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder='e.g. SUMMER2025' {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <div className='grid grid-cols-2 gap-4'>
               <FormField
                 control={form.control}
-                name='type'
+                name='name'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder='Select type' />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value={DiscountType.PERCENTAGE}>
-                          Percentage
-                        </SelectItem>
-                        <SelectItem value={DiscountType.FIXED}>
-                          Fixed Amount
-                        </SelectItem>
-                        <SelectItem value={DiscountType.FIXED_PRICE}>
-                          Fixed Price
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Campaign Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder='e.g. Summer Sale' {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -157,19 +128,12 @@ export function PromotionSheet({
 
               <FormField
                 control={form.control}
-                name='value'
+                name='code'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Value</FormLabel>
+                    <FormLabel>Promo Code (Optional)</FormLabel>
                     <FormControl>
-                      <Input
-                        type='number'
-                        {...field}
-                        onChange={(e) => {
-                          const val = parseFloat(e.target.value)
-                          field.onChange(isNaN(val) ? 0 : val)
-                        }}
-                      />
+                      <Input placeholder='e.g. SUMMER2025' {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -177,53 +141,7 @@ export function PromotionSheet({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name='scope'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Scope</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder='Select scope' />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value={PromotionScope.CART}>
-                        Cart Total
-                      </SelectItem>
-                      <SelectItem value={PromotionScope.CATEGORY}>
-                        Category
-                      </SelectItem>
-                      <SelectItem value={PromotionScope.PRODUCT}>
-                        Specific Product
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {watchScope === PromotionScope.PRODUCT && (
-              <FormField
-                control={form.control}
-                name='targetSku'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Target SKU</FormLabel>
-                    <FormControl>
-                      <Input placeholder='e.g. latte_01' {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+            <PromotionBuilder />
 
             <div className='grid grid-cols-2 gap-4'>
               <FormField
@@ -273,9 +191,6 @@ export function PromotionSheet({
                       }}
                     />
                   </FormControl>
-                  <FormDescription>
-                    Maximum discount amount to burn.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
