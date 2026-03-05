@@ -11,7 +11,7 @@ export interface PaginationMeta {
 
 // Enums (from DB Spec)
 export enum OrderStatus {
-  PENDING = 'PENDING',
+  ORDER_PLACED = 'ORDER_PLACED',
   CONFIRMED = 'CONFIRMED',
   PREPARING = 'PREPARING',
   READY = 'READY',
@@ -47,6 +47,11 @@ export enum InventoryAdjustmentReason {
   DAMAGE = 'DAMAGE',
 }
 
+export enum SurchargeType {
+  PERCENTAGE = 'PERCENTAGE',
+  FIXED_AMOUNT = 'FIXED_AMOUNT',
+}
+
 // DTOs (from API Spec)
 
 // Auth
@@ -74,6 +79,16 @@ export interface CreateCategoryRequest {
   description?: LocalizedText
 }
 
+export interface Category {
+  id: string
+  name: LocalizedText
+  slug: string
+  description?: LocalizedText
+  sortOrder: number
+  parentId?: string
+  imageUrl?: LocalizedText
+}
+
 export type UpdateCategoryRequest = Partial<CreateCategoryRequest>
 
 // Products
@@ -86,6 +101,8 @@ export interface CreateProductRequest {
   collectionIds?: string[]
   optionGroupIds?: string[]
   imageUrl?: LocalizedText
+  isUnlockable?: boolean
+  inventoryPolicy?: string
   // New fields
   price: ProductOptionGroup // The variant group for price
   priceGroupId: string
@@ -99,10 +116,18 @@ export interface Product {
   priceGroupId: string
   status: string // ProductStatus enum in DB spec
   categoryId: string
+  category?: {
+    id: string
+    name: LocalizedText
+    slug?: string
+  }
   optionGroupIds?: string[] // M:N relationship
   imageUrl?: LocalizedText
+  optionGroups?: OptionGroup[]
   createdAt: string
   updatedAt: string
+  isUnlockable?: boolean
+  inventoryPolicy?: string
 }
 
 export interface ProductFilters {
@@ -112,6 +137,58 @@ export interface ProductFilters {
   categoryId?: string
   status?: string
   collectionIds?: string[]
+}
+
+export interface Badge {
+  id: string
+  code: string
+  label: LocalizedText
+  bgColor: string
+  textColor: string
+  imageUrl?: string | null
+  isActive: boolean
+  displayOrder?: number
+}
+
+export interface ShopProduct {
+  id: string
+  shopId: string
+  productId: string
+  price: string
+  isAvailable: boolean
+  badgeIds?: string[]
+  badges?: Badge[]
+  product: Product
+}
+
+export interface ShopOptionChoice {
+  id: string
+  shopId: string
+  choiceId: string
+  price: string
+  isAvailable: boolean
+  badges: Badge[]
+  createdAt?: string
+  updatedAt?: string
+  version?: number
+}
+
+// Recipes
+export interface Recipe {
+  id: string
+  ingredientId: string
+  productId?: string
+  optionId?: string
+  quantity: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateRecipeDto {
+  ingredientId: string
+  quantity: number
+  productId?: string
+  optionId?: string
 }
 
 // Option Groups
@@ -130,10 +207,15 @@ export interface OptionGroup {
 }
 
 export interface OptionChoice {
-  id?: string
+  id: string
+  groupId?: string
   sku: string
   name: LocalizedText
-  price: number
+  price: string | number
+  imageUrl?: string | null
+  isDefault?: boolean
+  status?: string
+  shopOptionChoices?: ShopOptionChoice[]
 }
 
 export type ProductOptionGroup = Omit<OptionGroup, 'id'> & { id?: string }
@@ -147,7 +229,7 @@ export interface CreateOptionChoiceDto {
   isDefault?: boolean
 }
 
-export interface UpdateOptionChoiceDto extends Partial<CreateOptionChoiceDto> {}
+export type UpdateOptionChoiceDto = Partial<CreateOptionChoiceDto>
 
 export interface CreateOptionGroupDto {
   name: LocalizedText
@@ -158,29 +240,87 @@ export interface CreateOptionGroupDto {
   choices?: CreateOptionChoiceDto[]
 }
 
-export interface UpdateOptionGroupDto extends Partial<CreateOptionGroupDto> {}
+export type UpdateOptionGroupDto = Partial<CreateOptionGroupDto>
+
+export interface OrderCustomer {
+  id: string
+  name: string
+  phone: string
+  isGuest: boolean
+}
+
+export interface OrderFulfillment {
+  category: string // 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY'
+  name: LocalizedText
+}
+
+export interface FulfillmentMethod {
+  id: string
+  name: LocalizedText
+  description?: LocalizedText
+  category: string
+  isEnabled: boolean
+  feePercentage?: number | null
+}
+
+export interface OrderPricing {
+  subtotal: number
+  discount: number
+  surcharge: number
+  grandTotal: number
+}
 
 // Orders
 export interface Order {
   id: string
   invoiceCode: string
+  queueNumber: number
   status: OrderStatus
-  subtotal: number
-  grandTotal: number
   createdAt: string
+  customer?: OrderCustomer
+  fulfillment?: OrderFulfillment
+  pricing: OrderPricing
+  totalItems: number
   items: OrderItem[]
-  // ... more fields
+
+  paymentStatus?: PaymentStatus
+  paymentMethodName?: LocalizedText
+}
+
+export interface OrderItemOption {
+  name: string | LocalizedText
+  quantity: number
+  unitPrice: number
+  totalPrice: number
 }
 
 export interface OrderItem {
   id: string
-  productName: LocalizedText
+  name: string | LocalizedText
   quantity: number
   unitPrice: number
-  subtotal: number
-  // ...
+  totalPrice: number
+  options?: OrderItemOption[]
+  notes?: string
 }
 
+// Keeping these just in case they are used elsewhere, though not in the prompt JSON
+export interface OrderDiscount {
+  id: string
+  orderId: string
+  promotionId: string
+  name?: LocalizedText
+  amount?: number
+}
+
+export interface OrderSurcharge {
+  id: string
+  orderId: string
+  surchargeConfigId: string
+  name?: LocalizedText
+  amount?: number
+  isTax?: boolean
+}
 export interface GetOrdersFilters {
   page?: number
   limit?: number
@@ -229,9 +369,16 @@ export interface Start {
 export interface Shop {
   id: string
   name: LocalizedText
-  address: string
-  phone: string
   code: string
+  address?: string
+  phone?: string
+  description?: LocalizedText
+  locationLat?: number | string
+  locationLong?: number | string
+  phoneContacts?: Record<string, string>
+  openingHours?: Record<string, string>
+  imageUrl?: string | LocalizedText
+  bannerImageUrl?: string | LocalizedText
 }
 
 export interface Staff {
@@ -256,7 +403,6 @@ export interface AssignShopAccessRequest {
   roleId?: string
 }
 
-// Admin / Business
 export interface BusinessProfile {
   id: string
   name: LocalizedText
@@ -270,4 +416,79 @@ export interface UpdateBusinessProfileRequest {
   supportEmail?: string
   logoUrl?: string
   bannerImageUrl?: string
+}
+
+// Surcharges
+export interface SurchargeConfig {
+  id: string
+  businessId: string
+  name: LocalizedText
+  value: number
+  type: SurchargeType
+  isTax: boolean
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateSurchargeDto {
+  name: LocalizedText
+  value: number
+  type: SurchargeType
+  isTax?: boolean
+  isActive?: boolean
+}
+
+export type UpdateSurchargeDto = Partial<CreateSurchargeDto>
+
+// Order Creation
+export interface CreateOrderOptionDto {
+  choiceId: string
+  quantity: number
+  unitPrice: number
+}
+
+export interface CreateOrderItemDto {
+  productId: string
+  quantity: number
+  unitPrice: number
+  instructions?: string
+  options?: {
+    choiceId: string[]
+  }
+}
+
+export interface CreateOrderRequest {
+  shopId: string
+  userId?: string | null
+  guestInfo?: {
+    name: string
+    phone?: string
+  }
+  customerName?: string
+  customerPhone?: string
+  items: CreateOrderItemDto[]
+  fulfillmentMethodId: string
+  status: string
+  invoiceCode: string
+  queueNumber: number
+  instructions?: string
+  scheduledFor?: string
+  assignToSelf?: boolean
+  staffId?: string
+}
+
+export type ReceiptProps = {
+  invoiceCode: string
+  createdAt: string
+  items: OrderItem[]
+  fulfillmentCategory: string
+  queueNumber?: number | string
+
+  // Billing & Payment info
+  subtotal?: number
+  discount?: number
+  total?: number
+  paymentMethodName?: string
+  paymentStatus?: string
 }

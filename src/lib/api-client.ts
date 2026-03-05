@@ -1,5 +1,4 @@
 import axios from 'axios'
-import { toast } from 'sonner'
 
 // Assuming sonner is used for toasts, if not I might need to check. But typical stack uses sonner or similar.
 // I will check package.json or imports later if this fails, but for now assuming global toast or simple replace.
@@ -20,14 +19,65 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+
+    // Standardized Global Logging
+    // eslint-disable-next-line no-console
+    console.groupCollapsed(
+      `%cAPI Request: ${config.method?.toUpperCase()} ${config.url}`,
+      'color: #3b82f6; font-weight: bold;'
+    )
+    // eslint-disable-next-line no-console
+    console.log('Method:', config.method?.toUpperCase())
+    // eslint-disable-next-line no-console
+    console.log('URL:', `${config.baseURL || ''}${config.url}`)
+    // eslint-disable-next-line no-console
+    console.log('Payload:', config.data)
+    // eslint-disable-next-line no-console
+    console.log('Params:', config.params)
+    // eslint-disable-next-line no-console
+    console.groupEnd()
+
     return config
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    // eslint-disable-next-line no-console
+    console.error('API Request Error:', error)
+    return Promise.reject(error)
+  }
 )
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Standardized Global Logging
+    // eslint-disable-next-line no-console
+    console.groupCollapsed(
+      `%cAPI Response: ${response.status} ${response.config.url}`,
+      'color: #10b981; font-weight: bold;'
+    )
+    // eslint-disable-next-line no-console
+    console.log('Status:', response.status)
+    // eslint-disable-next-line no-console
+    console.log('Data:', response.data)
+    // eslint-disable-next-line no-console
+    console.groupEnd()
+
+    return response
+  },
   (error) => {
+    // eslint-disable-next-line no-console
+    console.groupCollapsed(
+      `%cAPI Error: ${error.response?.status || 'Unknown'} ${error.config?.url}`,
+      'color: #ef4444; font-weight: bold;'
+    )
+    // eslint-disable-next-line no-console
+    console.error('Error Details:', error)
+    if (error.response) {
+      // eslint-disable-next-line no-console
+      console.log('Response Data:', error.response.data)
+    }
+    // eslint-disable-next-line no-console
+    console.groupEnd()
+
     const status = error.response?.status
 
     if (status === 401) {
@@ -36,11 +86,6 @@ apiClient.interceptors.response.use(
         localStorage.removeItem('activeShopId')
         window.location.href = '/login'
       }
-    } else if (status === 403) {
-      // Trying to use a generic way to show toast if possible, otherwise just console error or alert for now until I confirm the toast lib.
-      toast.error('Permission Denied', {
-        description: "You don't have permission to perform this action.",
-      })
     }
     return Promise.reject(error)
   }

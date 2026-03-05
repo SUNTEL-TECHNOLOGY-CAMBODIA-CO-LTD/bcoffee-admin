@@ -1,10 +1,20 @@
 import { z } from 'zod'
 
+// Option Type Enum
 export enum OptionType {
   VARIANT = 'VARIANT',
   MODIFIER = 'MODIFIER',
   ADDON = 'ADDON',
 }
+
+// Recipes Schema (Moved up to be used in Option Choice)
+export const productRecipeSchema = z.object({
+  ingredientId: z.string().min(1, 'Ingredient is required'),
+  quantity: z.coerce.number().min(0, 'Quantity must be positive'),
+  optionId: z.string().optional(), // Nullable/Optional means Product-Level
+})
+
+export type ProductRecipe = z.infer<typeof productRecipeSchema>
 
 export const optionChoiceSchema = z.object({
   id: z.string().optional(), // Optional for new items
@@ -13,6 +23,8 @@ export const optionChoiceSchema = z.object({
     message: 'English name is required',
   }),
   price: z.coerce.number().min(0, 'Price must be non-negative'),
+  // Draft recipes for creation flow
+  recipes: z.array(productRecipeSchema).optional().default([]),
 })
 
 export type ProductOptionChoice = z.infer<typeof optionChoiceSchema>
@@ -37,6 +49,12 @@ export enum ProductStatus {
   ARCHIVED = 'ARCHIVED',
 }
 
+export enum InventoryPolicy {
+  STRICT = 'STRICT',
+  FLEXIBLE = 'FLEXIBLE',
+  NONE = 'NONE',
+}
+
 // Mock Category Type
 export interface Category {
   id: string
@@ -45,16 +63,10 @@ export interface Category {
   slug: string
   parentId?: string
   sortOrder: number
-  imageUrl?: Record<string, string>
+  imageUrl?: Record<string, string> | string
 }
 
-export const productRecipeSchema = z.object({
-  ingredientId: z.string().min(1, 'Ingredient is required'),
-  quantity: z.coerce.number().min(0, 'Quantity must be positive'),
-})
-
-export type ProductRecipe = z.infer<typeof productRecipeSchema>
-
+// Product Schema
 export const productSchema = z.object({
   id: z.string().optional(),
   name: z.record(z.string(), z.string()).refine((data) => !!data['en'], {
@@ -67,6 +79,8 @@ export const productSchema = z.object({
   priceGroupId: z.string().optional(), // ID of the price group if it exists
   categoryId: z.string().min(1, 'Category is required'),
   status: z.nativeEnum(ProductStatus),
+  isUnlockable: z.boolean().default(false),
+  inventoryPolicy: z.nativeEnum(InventoryPolicy).default(InventoryPolicy.NONE),
   imageUrl: z.record(z.string(), z.string()).optional(),
   optionGroupIds: z.array(z.string()).default([]), // Array of Group IDs
   recipes: z.array(productRecipeSchema).default([]),

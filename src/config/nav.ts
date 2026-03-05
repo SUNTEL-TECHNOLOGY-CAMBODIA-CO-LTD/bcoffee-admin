@@ -1,16 +1,18 @@
 import {
   Activity,
   Banknote,
+  Beef,
   Building,
   Coffee,
   Package,
+  Ruler,
   Settings,
   ToggleRight,
   TrendingUp,
   Users,
 } from 'lucide-react'
 
-export const storeNav = [
+export const getStoreNav = (shopId?: string | null) => [
   // {
   //   title: 'Dashboard',
   //   url: '/',
@@ -31,21 +33,17 @@ export const storeNav = [
     title: 'Inventory',
     url: '/inventory/stock',
     icon: Package,
+    items: [
+      { title: 'Stock Levels', url: '/inventory/stock' },
+      {
+        title: 'Inventory Logs',
+        url: shopId ? `/shops/${shopId}/inventory/logs` : '#',
+      },
+    ],
   },
-  // {
-  //   title: 'Inventory',
-  //   url: '/inventory',
-  //   icon: Package,
-  //   items: [
-  //     { title: 'Stock Levels', url: '/inventory/stock' },
-  //     { title: 'Purchase Orders', url: '/inventory/purchasing' },
-  //     { title: 'Suppliers', url: '/inventory/suppliers' },
-  //     { title: 'Wastage Logs', url: '/inventory/waste' },
-  //   ],
-  // },
   {
-    title: 'Menu Availability',
-    url: '/menu/availability',
+    title: 'Shop Menu',
+    url: shopId ? `/shops/${shopId}/menu` : '/menu/availability',
     icon: ToggleRight,
   },
   {
@@ -82,9 +80,22 @@ export const hqNav = [
         url: '/menu/collections',
       },
       {
+        title: 'Badges',
+        url: '/menu/badges',
+      },
+      {
         title: 'Availability',
         url: '/menu/availability',
       },
+    ],
+  },
+  {
+    title: 'Inventory',
+    url: '/inventory',
+    icon: Package,
+    items: [
+      { title: 'Ingredients', url: '/inventory/ingredients', icon: Beef },
+      { title: 'Units', url: '/inventory/units', icon: Ruler },
     ],
   },
   {
@@ -97,6 +108,7 @@ export const hqNav = [
       { title: 'Vouchers', url: '/growth/vouchers' },
       { title: 'Announcements', url: '/growth/announcements' },
       { title: 'Points & Referrals', url: '/growth/loyalty' },
+      { title: 'Membership Program', url: '/growth/membership' },
       { title: 'Reviews', url: '/growth/reviews' },
     ],
   },
@@ -120,7 +132,6 @@ export const hqNav = [
     icon: Building,
     items: [
       { title: 'Business Profile', url: '/settings/business' },
-      { title: 'Units', url: '/settings/units' },
       { title: 'Roles & Permissions', url: '/settings/roles' },
       { title: 'Audit Logs', url: '/settings/audit-logs' },
       { title: 'Mobile App', url: '/settings/mobile-app' },

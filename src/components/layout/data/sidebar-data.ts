@@ -54,6 +54,7 @@ export const sidebarData: SidebarData = {
             { title: 'Products', url: '/menu/products' },
             { title: 'Categories', url: '/menu/categories' },
             { title: 'Option Groups', url: '/menu/options' },
+            { title: 'Badges', url: '/menu/badges' },
             { title: 'Price Books', url: '/menu/pricing' },
           ],
         },
@@ -63,6 +64,7 @@ export const sidebarData: SidebarData = {
           icon: Package,
           items: [
             { title: 'Stock Levels', url: '/inventory/stock' },
+            { title: 'Inventory Logs', url: '/inventory/logs' },
             { title: 'Purchase Orders', url: '/inventory/purchasing' },
             { title: 'Suppliers', url: '/inventory/suppliers' },
             { title: 'Wastage Logs', url: '/inventory/waste' },
@@ -96,7 +98,6 @@ export const sidebarData: SidebarData = {
           items: [
             { title: 'Store Profile', url: '/settings/store' },
             { title: 'Financials', url: '/settings/financial' },
-            { title: 'Units', url: '/settings/units' },
           ],
         },
       ],

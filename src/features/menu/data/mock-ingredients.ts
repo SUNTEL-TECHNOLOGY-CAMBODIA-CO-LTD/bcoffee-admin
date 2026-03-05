@@ -1,7 +1,7 @@
 export interface Ingredient {
   id: string
   name: string
-  unit: string
+  unit: string | { symbol: Record<string, string> }
   costPerUnit: number
 }
 

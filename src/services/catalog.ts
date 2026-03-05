@@ -5,14 +5,40 @@ import {
   type ProductFilters,
   type CreateOptionGroupDto,
   type UpdateOptionGroupDto,
-  // Update types if needed
+  type PaginationMeta,
+  type Category,
+  type OptionGroup,
 } from '@/types/api'
 import { apiClient } from '@/lib/api-client'
 
 // Categories
-export const getCategories = async () => {
-  const response = await apiClient.get('/admin/categories')
-  return response.data
+export const getCategories = async (
+  params?: Record<string, unknown>
+): Promise<{ data: Category[]; meta: PaginationMeta }> => {
+  const response = await apiClient.get('/admin/categories', { params })
+  return {
+    data: response.data?.items ?? response.data?.data ?? [],
+    meta: response.data?.meta ?? {
+      total: 0,
+      page: 1,
+      limit: 10,
+      totalPages: 1,
+    },
+  }
+}
+
+// Collections
+export const getCollections = async () => {
+  const response = await apiClient.get('/admin/collections')
+  return {
+    data: response.data?.items ?? response.data?.data ?? [],
+    meta: response.data?.meta ?? {
+      total: 0,
+      page: 1,
+      limit: 10,
+      totalPages: 1,
+    },
+  }
 }
 
 export const createCategory = async (data: CreateCategoryRequest) => {
@@ -34,9 +60,19 @@ export const deleteCategory = async (id: string) => {
 }
 
 // Option Groups
-export const getOptionGroups = async () => {
-  const response = await apiClient.get('/admin/option-groups')
-  return response.data
+export const getOptionGroups = async (
+  params?: Record<string, unknown>
+): Promise<{ data: OptionGroup[]; meta: PaginationMeta }> => {
+  const response = await apiClient.get('/admin/option-groups', { params })
+  return {
+    data: response.data?.items ?? response.data?.data ?? [],
+    meta: response.data?.meta ?? {
+      total: 0,
+      page: 1,
+      limit: 10,
+      totalPages: 1,
+    },
+  }
 }
 
 export const getOptionGroup = async (id: string) => {
@@ -67,15 +103,24 @@ export const deleteOptionGroup = async (id: string) => {
 }
 
 // Products
-export const getProducts = async (filters?: ProductFilters) => {
+export const getProducts = async (
+  filters?: ProductFilters
+): Promise<{ data: Product[]; meta: PaginationMeta }> => {
   const response = await apiClient.get('/admin/products', { params: filters })
-  return response.data
+  return {
+    data: response.data?.items ?? response.data?.data ?? [],
+    meta: response.data?.meta ?? {
+      total: 0,
+      page: 1,
+      limit: 10,
+      totalPages: 1,
+    },
+  }
 }
 
 export const createProduct = async (
   data: CreateProductRequest
 ): Promise<Product> => {
-  console.log('Payload: ', data)
   const response = await apiClient.post('/admin/products', data)
   return response.data
 }
@@ -90,5 +135,67 @@ export const updateProduct = async (
 
 export const deleteProduct = async (id: string) => {
   const response = await apiClient.delete(`/admin/products/${id}`)
+  return response.data
+}
+
+// Shop Menu
+export const getShopProducts = async (shopId: string) => {
+  const response = await apiClient.get(`/admin/shops/${shopId}/menu`)
+  return response.data
+}
+
+export const syncShopCatalog = async (shopId: string) => {
+  const response = await apiClient.post(
+    `/admin/shops/${shopId}/sync-catalog`,
+    {}
+  )
+  return response.data
+}
+
+export const toggleProductAvailability = async (
+  shopId: string,
+  productId: string,
+  isAvailable: boolean
+) => {
+  const response = await apiClient.patch(
+    `/admin/shops/${shopId}/menu/products/${productId}`,
+    { isAvailable }
+  )
+  return response.data
+}
+
+export const toggleBulkProductAvailability = async (
+  shopId: string,
+  productIds: string[],
+  status: boolean
+) => {
+  const response = await apiClient.patch(`/admin/shops/${shopId}/menu/status`, {
+    productIds,
+    status,
+  })
+  return response.data
+}
+
+export const updateShopProduct = async (
+  shopId: string,
+  productId: string,
+  data: { price?: number; isAvailable?: boolean; badgeIds?: string[] }
+) => {
+  const response = await apiClient.patch(
+    `/admin/shops/${shopId}/menu/products/${productId}`,
+    data
+  )
+  return response.data
+}
+
+export const updateShopOptionChoice = async (
+  shopId: string,
+  choiceId: string,
+  data: { price?: number; isAvailable?: boolean; badgeIds?: string[] }
+) => {
+  const response = await apiClient.patch(
+    `/admin/shops/${shopId}/menu/choices/${choiceId}`,
+    data
+  )
   return response.data
 }

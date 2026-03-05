@@ -13,6 +13,12 @@ import {
   createOptionGroup,
   updateOptionGroup,
   deleteOptionGroup,
+  getCollections,
+  getShopProducts,
+  syncShopCatalog,
+  toggleBulkProductAvailability,
+  updateShopProduct,
+  updateShopOptionChoice,
 } from '@/services/catalog'
 import type {
   CreateCategoryRequest,
@@ -22,10 +28,17 @@ import type {
 } from '@/types/api'
 
 // Categories
-export const useCategories = () => {
+export const useCategories = (params?: Record<string, unknown>) => {
   return useQuery({
-    queryKey: ['categories'],
-    queryFn: getCategories,
+    queryKey: ['categories', params],
+    queryFn: () => getCategories(params),
+  })
+}
+
+export const useCollections = () => {
+  return useQuery({
+    queryKey: ['collections'],
+    queryFn: getCollections,
   })
 }
 
@@ -65,10 +78,10 @@ export const useDeleteCategory = () => {
   })
 }
 
-export const useOptionGroups = () => {
+export const useOptionGroups = (params?: Record<string, unknown>) => {
   return useQuery({
-    queryKey: ['option-groups'],
-    queryFn: getOptionGroups,
+    queryKey: ['option-groups', params],
+    queryFn: () => getOptionGroups(params),
   })
 }
 
@@ -156,6 +169,107 @@ export const useDeleteProduct = () => {
     mutationFn: deleteProduct,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] })
+    },
+  })
+}
+
+// Shop Menu
+export const useShopProducts = (shopId: string) => {
+  return useQuery({
+    queryKey: ['shop-products', shopId],
+    queryFn: () => getShopProducts(shopId),
+    enabled: !!shopId,
+  })
+}
+
+export const useSyncShopCatalog = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (shopId: string) => syncShopCatalog(shopId),
+    onSuccess: (_, shopId) => {
+      queryClient.invalidateQueries({
+        queryKey: ['shop-products', shopId],
+      })
+    },
+  })
+}
+
+export const useToggleProductAvailability = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      shopId,
+      productId,
+      isAvailable,
+    }: {
+      shopId: string
+      productId: string
+      isAvailable: boolean
+    }) => updateShopProduct(shopId, productId, { isAvailable }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['shop-products', variables.shopId],
+      })
+    },
+  })
+}
+
+export const useToggleBulkProductAvailability = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      shopId,
+      productIds,
+      status,
+    }: {
+      shopId: string
+      productIds: string[]
+      status: boolean
+    }) => toggleBulkProductAvailability(shopId, productIds, status),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['shop-products', variables.shopId],
+      })
+    },
+  })
+}
+
+export const useUpdateShopProduct = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      shopId,
+      productId,
+      data,
+    }: {
+      shopId: string
+      productId: string
+      data: { price?: number; isAvailable?: boolean; badgeIds?: string[] }
+    }) => updateShopProduct(shopId, productId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['shop-products', variables.shopId],
+      })
+    },
+  })
+}
+
+export const useUpdateShopOptionChoice = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      shopId,
+      choiceId,
+      data,
+    }: {
+      shopId: string
+      choiceId: string
+      data: { price?: number; isAvailable?: boolean; badgeIds?: string[] }
+    }) => updateShopOptionChoice(shopId, choiceId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['shop-products', variables.shopId],
+      })
     },
   })
 }

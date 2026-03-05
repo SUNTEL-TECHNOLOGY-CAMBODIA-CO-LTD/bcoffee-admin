@@ -1,12 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import {
-  BadgeCheck,
-  Bell,
-  ChevronsUpDown,
-  CreditCard,
-  LogOut,
-  Sparkles,
-} from 'lucide-react'
+import { BadgeCheck, ChevronsUpDown, LogOut, Printer, Key } from 'lucide-react'
 import useDialogState from '@/hooks/use-dialog-state'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -24,6 +17,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { ChangePasswordModal } from '@/components/change-password-modal'
 import { LogoutDialog } from '@/components/logout-dialog'
 
 type NavUserProps = {
@@ -37,6 +31,7 @@ type NavUserProps = {
 export function NavUser({ user }: NavUserProps) {
   const { isMobile } = useSidebar()
   const [open, setOpen] = useDialogState()
+  const [changePasswordOpen, setChangePasswordOpen] = useDialogState()
 
   return (
     <>
@@ -78,7 +73,7 @@ export function NavUser({ user }: NavUserProps) {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuGroup>
+              {/* <DropdownMenuGroup>
                 <DropdownMenuItem>
                   <Sparkles />
                   Upgrade to Pro
@@ -87,7 +82,7 @@ export function NavUser({ user }: NavUserProps) {
                   <Sparkles />
                   Switch Business
                 </DropdownMenuItem>
-              </DropdownMenuGroup>
+              </DropdownMenuGroup> */}
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 <DropdownMenuItem asChild>
@@ -96,18 +91,28 @@ export function NavUser({ user }: NavUserProps) {
                     Account
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setChangePasswordOpen(true)}>
+                  <Key />
+                  Change Password
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to='/settings'>
+                  <Link to='/settings/printers'>
+                    <Printer />
+                    Printer Settings
+                  </Link>
+                </DropdownMenuItem>
+                {/* <DropdownMenuItem asChild>
+                  <Link to='/'>
                     <CreditCard />
                     Billing
                   </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
+                </DropdownMenuItem> */}
+                {/* <DropdownMenuItem asChild>
                   <Link to='/settings/notifications'>
                     <Bell />
                     Notifications
                   </Link>
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -123,6 +128,10 @@ export function NavUser({ user }: NavUserProps) {
       </SidebarMenu>
 
       <LogoutDialog open={!!open} onOpenChange={setOpen} />
+      <ChangePasswordModal
+        open={!!changePasswordOpen}
+        onOpenChange={setChangePasswordOpen}
+      />
     </>
   )
 }

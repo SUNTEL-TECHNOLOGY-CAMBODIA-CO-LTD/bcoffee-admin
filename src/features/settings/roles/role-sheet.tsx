@@ -24,34 +24,60 @@ import {
   SheetFooter,
 } from '@/components/ui/sheet'
 import { Textarea } from '@/components/ui/textarea'
-import { MOCK_PERMISSIONS } from '../data/mock-roles'
 import { roleSchema, type Role } from '../data/role-schema'
+
+interface PermissionInfo {
+  id: string
+  slug: string
+  description?: string
+  [key: string]: any
+}
+
+interface GroupedPermission {
+  id: string
+  label: string
+  description?: string
+  group: string
+}
 
 interface RoleSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   role: Role | null
   onSave: (role: Role) => void
+  permissions: PermissionInfo[]
 }
-
-// Group permissions by 'group' property
-const groupedPermissions = MOCK_PERMISSIONS.reduce(
-  (acc, permission) => {
-    if (!acc[permission.group]) {
-      acc[permission.group] = []
-    }
-    acc[permission.group].push(permission)
-    return acc
-  },
-  {} as Record<string, typeof MOCK_PERMISSIONS>
-)
 
 export function RoleSheet({
   open,
   onOpenChange,
   role,
   onSave,
+  permissions,
 }: RoleSheetProps) {
+  const groupedPermissions = permissions.reduce(
+    (acc: Record<string, GroupedPermission[]>, permission: PermissionInfo) => {
+      // derive group from slug e.g. "pos:access" -> "POS"
+      const parts = permission.slug?.split(':') || ['GENERAL', permission.id]
+      const groupKey = parts[0].toUpperCase()
+
+      const rawLabel =
+        parts.slice(1).join(' ').replace(/_/g, ' ') || permission.slug
+      const label = rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1)
+
+      if (!acc[groupKey]) acc[groupKey] = []
+
+      acc[groupKey].push({
+        id: permission.id,
+        label: label,
+        description: permission.description,
+        group: groupKey,
+      })
+      return acc
+    },
+    {}
+  )
+
   const form = useForm<Role>({
     resolver: zodResolver(roleSchema),
     defaultValues: {
@@ -202,53 +228,56 @@ export function RoleSheet({
                           <div key={group} className='space-y-3'>
                             <h4 className='text-sm font-semibold'>{group}</h4>
                             <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
-                              {permissions.map((permission) => (
-                                <FormField
-                                  key={permission.id}
-                                  control={form.control}
-                                  name='permissions'
-                                  render={({ field }) => {
-                                    return (
-                                      <FormItem
-                                        key={permission.id}
-                                        className='flex flex-row items-start space-y-0 space-x-3 rounded-md border p-3 shadow-sm transition-colors hover:bg-muted/50'
-                                      >
-                                        <FormControl>
-                                          <Checkbox
-                                            className='mt-0.5'
-                                            checked={field.value?.includes(
-                                              permission.id
-                                            )}
-                                            onCheckedChange={(checked) => {
-                                              return checked
-                                                ? field.onChange([
-                                                    ...field.value,
-                                                    permission.id,
-                                                  ])
-                                                : field.onChange(
-                                                    field.value?.filter(
-                                                      (value) =>
-                                                        value !== permission.id
+                              {permissions.map(
+                                (permission: GroupedPermission) => (
+                                  <FormField
+                                    key={permission.id}
+                                    control={form.control}
+                                    name='permissions'
+                                    render={({ field }) => {
+                                      return (
+                                        <FormItem
+                                          key={permission.id}
+                                          className='flex flex-row items-start space-y-0 space-x-3 rounded-md border p-3 shadow-sm transition-colors hover:bg-muted/50'
+                                        >
+                                          <FormControl>
+                                            <Checkbox
+                                              className='mt-0.5'
+                                              checked={field.value?.includes(
+                                                permission.id
+                                              )}
+                                              onCheckedChange={(checked) => {
+                                                return checked
+                                                  ? field.onChange([
+                                                      ...field.value,
+                                                      permission.id,
+                                                    ])
+                                                  : field.onChange(
+                                                      field.value?.filter(
+                                                        (value) =>
+                                                          value !==
+                                                          permission.id
+                                                      )
                                                     )
-                                                  )
-                                            }}
-                                          />
-                                        </FormControl>
-                                        <div className='space-y-1 leading-none'>
-                                          <FormLabel className='cursor-pointer text-sm font-normal'>
-                                            {permission.label}
-                                          </FormLabel>
-                                          {permission.description && (
-                                            <p className='text-[0.8rem] text-muted-foreground'>
-                                              {permission.description}
-                                            </p>
-                                          )}
-                                        </div>
-                                      </FormItem>
-                                    )
-                                  }}
-                                />
-                              ))}
+                                              }}
+                                            />
+                                          </FormControl>
+                                          <div className='space-y-1 leading-none'>
+                                            <FormLabel className='cursor-pointer text-sm font-normal'>
+                                              {permission.label}
+                                            </FormLabel>
+                                            {permission.description && (
+                                              <p className='text-[0.8rem] text-muted-foreground'>
+                                                {permission.description}
+                                              </p>
+                                            )}
+                                          </div>
+                                        </FormItem>
+                                      )
+                                    }}
+                                  />
+                                )
+                              )}
                             </div>
                           </div>
                         )

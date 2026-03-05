@@ -1,19 +1,38 @@
 import { useState } from 'react'
+import type { SurchargeConfig } from '@/types/api'
+import {
+  useSurcharges,
+  useToggleSurcharge,
+} from '@/hooks/queries/use-surcharges'
+import { BrandLoader } from '@/components/ui/brand-loader'
 import { DataTable } from '@/components/custom/data-table'
 import { PageTitle } from '@/components/page-title'
-import { MOCK_SURCHARGES, type Surcharge } from '../data/mock-settings'
 import { columns } from './components/surcharges-columns'
 import { SurchargeSheet } from './components/surcharges-sheet'
 
 export default function FinancialSettingsPage() {
   const [open, setOpen] = useState(false)
-  const [selectedSurcharge, setSelectedSurcharge] = useState<Surcharge | null>(
-    null
-  )
+  const [selectedSurcharge, setSelectedSurcharge] =
+    useState<SurchargeConfig | null>(null)
 
-  const handleEdit = (surcharge: Surcharge) => {
+  const { data: surcharges = [], isLoading } = useSurcharges()
+  const { mutate: toggleSurcharge } = useToggleSurcharge()
+
+  const handleEdit = (surcharge: SurchargeConfig) => {
     setSelectedSurcharge(surcharge)
     setOpen(true)
+  }
+
+  const handleToggle = (surcharge: SurchargeConfig) => {
+    toggleSurcharge(surcharge.id)
+  }
+
+  if (isLoading) {
+    return (
+      <div className='flex h-[80vh] w-full items-center justify-center p-6'>
+        <BrandLoader />
+      </div>
+    )
   }
 
   return (
@@ -29,10 +48,10 @@ export default function FinancialSettingsPage() {
 
       <DataTable
         columns={columns}
-        data={MOCK_SURCHARGES}
+        data={surcharges}
         searchKey='name.en'
         searchPlaceholder='Filter surcharges...'
-        meta={{ onEdit: handleEdit }}
+        meta={{ onEdit: handleEdit, onToggle: handleToggle }}
       />
 
       <SurchargeSheet

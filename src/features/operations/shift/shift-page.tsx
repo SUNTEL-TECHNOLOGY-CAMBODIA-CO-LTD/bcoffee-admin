@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { PageTitle } from '@/components/page-title'
-import { ActiveShiftDashboard } from './components/active-shift-dashboard'
-import { StartShiftCard } from './components/start-shift-card'
+import { ActiveShiftDashboard } from './_components/active-shift-dashboard'
+import { StartShiftCard } from './_components/start-shift-card'
 import { type ShiftSession } from './data/shift-schema'
 
 export function ShiftPage() {

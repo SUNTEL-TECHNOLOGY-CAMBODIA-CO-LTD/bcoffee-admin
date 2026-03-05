@@ -9,7 +9,7 @@ interface MultiLangInputProps {
   value: Record<string, string>
   onChange: (value: Record<string, string>) => void
   label?: string
-  placeholder?: string
+  placeholder?: string | Record<string, string>
   className?: string
 }
 
@@ -58,13 +58,17 @@ export function MultiLangInput({
         </Tabs>
       </div>
       <Input
+        autoComplete='off'
         value={currentValue}
         onChange={(e) => handleInputChange(e.target.value)}
-        placeholder={
-          placeholder
-            ? `${placeholder} (${SUPPORTED_LOCALES.find((l) => l.code === currentTab)?.label})`
-            : undefined
-        }
+        placeholder={(() => {
+          if (!placeholder) return undefined
+          const basePlaceholder =
+            typeof placeholder === 'string'
+              ? placeholder
+              : placeholder[currentTab] || placeholder[DEFAULT_LOCALE] || ''
+          return `${basePlaceholder} (${SUPPORTED_LOCALES.find((l) => l.code === currentTab)?.label})`
+        })()}
       />
     </div>
   )
