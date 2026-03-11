@@ -63,6 +63,7 @@ export function useKdsBoard(
 
     // Listen for new orders
     socket.on('order.created', (newOrder: KdsOrder) => {
+      console.log('work', newOrder)
       playNewOrderSound()
       queryClient.setQueryData<KdsBoardState>(
         KDS_BOARD_KEYS.shop(shopId),
