@@ -82,7 +82,7 @@ export default function OrdersPage() {
     pageSize: number
   }) => {
     navigate({
-      search: (old: Record<string, unknown>) => ({
+      search: (old) => ({
         ...old,
         page: pagination.pageIndex + 1,
         limit: pagination.pageSize,
@@ -105,8 +105,10 @@ export default function OrdersPage() {
       search: (old) => ({
         ...old,
         page: 1,
-        startDate: range?.from ? format(range.from, 'yyyy-MM-dd') : undefined,
-        endDate: range?.to ? format(range.to, 'yyyy-MM-dd') : undefined,
+        startDate: range?.from
+          ? format(range.from, 'yyyy-MM-dd')
+          : currentWeekStart,
+        endDate: range?.to ? format(range.to, 'yyyy-MM-dd') : currentWeekEnd,
       }),
     })
   }
@@ -117,8 +119,8 @@ export default function OrdersPage() {
         ...old,
         page: 1,
         status: undefined,
-        startDate: undefined,
-        endDate: undefined,
+        startDate: currentWeekStart,
+        endDate: currentWeekEnd,
       }),
     })
   }
