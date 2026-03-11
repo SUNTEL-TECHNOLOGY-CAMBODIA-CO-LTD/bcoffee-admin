@@ -47,7 +47,6 @@ import { Route as AuthenticatedOpsSessionRouteRouteImport } from './routes/_auth
 import { Route as AuthenticatedInventoryStockRouteRouteImport } from './routes/_authenticated/inventory/stock/route'
 import { Route as AuthenticatedOpsSessionIndexRouteImport } from './routes/_authenticated/ops/session/index'
 import { Route as AuthenticatedShopsIdMenuRouteImport } from './routes/_authenticated/shops/$id/menu'
-import { Route as AuthenticatedShopsIdInventoryLogsRouteRouteImport } from './routes/_authenticated/shops/$id/inventory/logs/route'
 
 const AuthenticatedOperationsIndexLazyRouteImport = createFileRoute(
   '/_authenticated/operations/',
@@ -573,12 +572,6 @@ const AuthenticatedShopsIdMenuRoute =
     path: '/shops/$id/menu',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedShopsIdInventoryLogsRouteRoute =
-  AuthenticatedShopsIdInventoryLogsRouteRouteImport.update({
-    id: '/shops/$id/inventory/logs',
-    path: '/shops/$id/inventory/logs',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -642,7 +635,6 @@ export interface FileRoutesByFullPath {
   '/growth/reviews/': typeof AuthenticatedGrowthReviewsIndexLazyRoute
   '/menu/availability/': typeof AuthenticatedMenuAvailabilityIndexLazyRoute
   '/settings/financial/': typeof AuthenticatedSettingsFinancialIndexLazyRoute
-  '/shops/$id/inventory/logs': typeof AuthenticatedShopsIdInventoryLogsRouteRoute
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof authForgotPasswordRoute
@@ -702,7 +694,6 @@ export interface FileRoutesByTo {
   '/growth/reviews': typeof AuthenticatedGrowthReviewsIndexLazyRoute
   '/menu/availability': typeof AuthenticatedMenuAvailabilityIndexLazyRoute
   '/settings/financial': typeof AuthenticatedSettingsFinancialIndexLazyRoute
-  '/shops/$id/inventory/logs': typeof AuthenticatedShopsIdInventoryLogsRouteRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -768,7 +759,6 @@ export interface FileRoutesById {
   '/_authenticated/growth/reviews/': typeof AuthenticatedGrowthReviewsIndexLazyRoute
   '/_authenticated/menu/availability/': typeof AuthenticatedMenuAvailabilityIndexLazyRoute
   '/_authenticated/settings/financial/': typeof AuthenticatedSettingsFinancialIndexLazyRoute
-  '/_authenticated/shops/$id/inventory/logs': typeof AuthenticatedShopsIdInventoryLogsRouteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -834,7 +824,6 @@ export interface FileRouteTypes {
     | '/growth/reviews/'
     | '/menu/availability/'
     | '/settings/financial/'
-    | '/shops/$id/inventory/logs'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
@@ -894,7 +883,6 @@ export interface FileRouteTypes {
     | '/growth/reviews'
     | '/menu/availability'
     | '/settings/financial'
-    | '/shops/$id/inventory/logs'
   id:
     | '__root__'
     | '/_authenticated'
@@ -959,7 +947,6 @@ export interface FileRouteTypes {
     | '/_authenticated/growth/reviews/'
     | '/_authenticated/menu/availability/'
     | '/_authenticated/settings/financial/'
-    | '/_authenticated/shops/$id/inventory/logs'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1412,13 +1399,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedShopsIdMenuRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/shops/$id/inventory/logs': {
-      id: '/_authenticated/shops/$id/inventory/logs'
-      path: '/shops/$id/inventory/logs'
-      fullPath: '/shops/$id/inventory/logs'
-      preLoaderRoute: typeof AuthenticatedShopsIdInventoryLogsRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
   }
 }
 
@@ -1551,7 +1531,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedShopsIdMenuRoute: typeof AuthenticatedShopsIdMenuRoute
   AuthenticatedGrowthReviewsIndexLazyRoute: typeof AuthenticatedGrowthReviewsIndexLazyRoute
   AuthenticatedMenuAvailabilityIndexLazyRoute: typeof AuthenticatedMenuAvailabilityIndexLazyRoute
-  AuthenticatedShopsIdInventoryLogsRouteRoute: typeof AuthenticatedShopsIdInventoryLogsRouteRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1593,8 +1572,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedGrowthReviewsIndexLazyRoute,
   AuthenticatedMenuAvailabilityIndexLazyRoute:
     AuthenticatedMenuAvailabilityIndexLazyRoute,
-  AuthenticatedShopsIdInventoryLogsRouteRoute:
-    AuthenticatedShopsIdInventoryLogsRouteRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

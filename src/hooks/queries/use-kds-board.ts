@@ -38,11 +38,12 @@ export function useKdsBoard(
       import.meta.env.VITE_API_URL?.replace(/\/api\/v\d+$/, '') ?? ''
 
     // Connect to the specific namespace and send shopId as query
+
     const socket = io(`${socketBaseUrl}/kds`, {
       query: {
         shopId,
       },
-      transports: ['websocket'],
+      transports: ['polling', 'websocket'],
     })
 
     socket.on('connect', () => {
