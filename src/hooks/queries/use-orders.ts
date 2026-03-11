@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { getOrders, updateOrderStatus, createOrder } from '@/services/ops'
 import {
   type GetOrdersFilters,
@@ -16,6 +16,7 @@ export const useOrders = (filters?: GetOrdersFilters) => {
     queryKey: ['orders', filters],
     queryFn: () => getOrders(filters),
     refetchInterval: 30000, // Poll every 30s
+    placeholderData: keepPreviousData,
   })
 }
 
