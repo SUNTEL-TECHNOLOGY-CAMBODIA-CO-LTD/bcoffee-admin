@@ -40,6 +40,7 @@ import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_a
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedOperationsOrdersRouteImport } from './routes/_authenticated/operations/orders'
 import { Route as AuthenticatedMenuProductsRouteImport } from './routes/_authenticated/menu/products'
+import { Route as AuthenticatedLoyaltyProgramsRouteImport } from './routes/_authenticated/loyalty/programs'
 import { Route as AuthenticatedGrowthCustomersRouteImport } from './routes/_authenticated/growth/customers'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 import { Route as AuthenticatedSettingsFinancialRouteRouteImport } from './routes/_authenticated/settings/financial/route'
@@ -47,6 +48,7 @@ import { Route as AuthenticatedOpsSessionRouteRouteImport } from './routes/_auth
 import { Route as AuthenticatedInventoryStockRouteRouteImport } from './routes/_authenticated/inventory/stock/route'
 import { Route as AuthenticatedOpsSessionIndexRouteImport } from './routes/_authenticated/ops/session/index'
 import { Route as AuthenticatedShopsIdMenuRouteImport } from './routes/_authenticated/shops/$id/menu'
+import { Route as AuthenticatedLoyaltyProgramsCreateRouteImport } from './routes/_authenticated/loyalty/programs.create'
 import { Route as AuthenticatedShopsIdInventoryLogsRouteRouteImport } from './routes/_authenticated/shops/$id/inventory/logs/route'
 
 const AuthenticatedOperationsIndexLazyRouteImport = createFileRoute(
@@ -103,12 +105,6 @@ const AuthenticatedGrowthVouchersLazyRouteImport = createFileRoute(
 const AuthenticatedGrowthPromotionsLazyRouteImport = createFileRoute(
   '/_authenticated/growth/promotions',
 )()
-const AuthenticatedGrowthMembershipLazyRouteImport = createFileRoute(
-  '/_authenticated/growth/membership',
-)()
-const AuthenticatedGrowthLoyaltyLazyRouteImport = createFileRoute(
-  '/_authenticated/growth/loyalty',
-)()
 const AuthenticatedGrowthAnnouncementsLazyRouteImport = createFileRoute(
   '/_authenticated/growth/announcements',
 )()
@@ -125,6 +121,9 @@ const AuthenticatedSettingsFinancialPaymentMethodsLazyRouteImport =
   createFileRoute('/_authenticated/settings/financial/payment-methods')()
 const AuthenticatedSettingsFinancialCashDrawersLazyRouteImport =
   createFileRoute('/_authenticated/settings/financial/cash-drawers')()
+const AuthenticatedLoyaltyProgramsIdLazyRouteImport = createFileRoute(
+  '/_authenticated/loyalty/programs/$id',
+)()
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -395,24 +394,6 @@ const AuthenticatedGrowthPromotionsLazyRoute =
       (d) => d.Route,
     ),
   )
-const AuthenticatedGrowthMembershipLazyRoute =
-  AuthenticatedGrowthMembershipLazyRouteImport.update({
-    id: '/growth/membership',
-    path: '/growth/membership',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any).lazy(() =>
-    import('./routes/_authenticated/growth/membership.lazy').then(
-      (d) => d.Route,
-    ),
-  )
-const AuthenticatedGrowthLoyaltyLazyRoute =
-  AuthenticatedGrowthLoyaltyLazyRouteImport.update({
-    id: '/growth/loyalty',
-    path: '/growth/loyalty',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any).lazy(() =>
-    import('./routes/_authenticated/growth/loyalty.lazy').then((d) => d.Route),
-  )
 const AuthenticatedGrowthAnnouncementsLazyRoute =
   AuthenticatedGrowthAnnouncementsLazyRouteImport.update({
     id: '/growth/announcements',
@@ -476,6 +457,16 @@ const AuthenticatedMenuProductsRoute =
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any).lazy(() =>
     import('./routes/_authenticated/menu/products.lazy').then((d) => d.Route),
+  )
+const AuthenticatedLoyaltyProgramsRoute =
+  AuthenticatedLoyaltyProgramsRouteImport.update({
+    id: '/loyalty/programs',
+    path: '/loyalty/programs',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/loyalty/programs.lazy').then(
+      (d) => d.Route,
+    ),
   )
 const AuthenticatedGrowthCustomersRoute =
   AuthenticatedGrowthCustomersRouteImport.update({
@@ -567,12 +558,32 @@ const AuthenticatedSettingsFinancialCashDrawersLazyRoute =
       (d) => d.Route,
     ),
   )
+const AuthenticatedLoyaltyProgramsIdLazyRoute =
+  AuthenticatedLoyaltyProgramsIdLazyRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedLoyaltyProgramsRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/loyalty/programs.$id.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const AuthenticatedShopsIdMenuRoute =
   AuthenticatedShopsIdMenuRouteImport.update({
     id: '/shops/$id/menu',
     path: '/shops/$id/menu',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedLoyaltyProgramsCreateRoute =
+  AuthenticatedLoyaltyProgramsCreateRouteImport.update({
+    id: '/create',
+    path: '/create',
+    getParentRoute: () => AuthenticatedLoyaltyProgramsRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/loyalty/programs.create.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const AuthenticatedShopsIdInventoryLogsRouteRoute =
   AuthenticatedShopsIdInventoryLogsRouteRouteImport.update({
     id: '/shops/$id/inventory/logs',
@@ -599,6 +610,7 @@ export interface FileRoutesByFullPath {
   '/settings/financial': typeof AuthenticatedSettingsFinancialRouteRouteWithChildren
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/growth/customers': typeof AuthenticatedGrowthCustomersRoute
+  '/loyalty/programs': typeof AuthenticatedLoyaltyProgramsRouteWithChildren
   '/menu/products': typeof AuthenticatedMenuProductsRoute
   '/operations/orders': typeof AuthenticatedOperationsOrdersRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -608,8 +620,6 @@ export interface FileRoutesByFullPath {
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/printers': typeof AuthenticatedSettingsPrintersRoute
   '/growth/announcements': typeof AuthenticatedGrowthAnnouncementsLazyRoute
-  '/growth/loyalty': typeof AuthenticatedGrowthLoyaltyLazyRoute
-  '/growth/membership': typeof AuthenticatedGrowthMembershipLazyRoute
   '/growth/promotions': typeof AuthenticatedGrowthPromotionsLazyRoute
   '/growth/vouchers': typeof AuthenticatedGrowthVouchersLazyRoute
   '/hq/overview': typeof AuthenticatedHqOverviewLazyRoute
@@ -635,7 +645,9 @@ export interface FileRoutesByFullPath {
   '/tasks/': typeof AuthenticatedTasksIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
   '/operations/': typeof AuthenticatedOperationsIndexLazyRoute
+  '/loyalty/programs/create': typeof AuthenticatedLoyaltyProgramsCreateRoute
   '/shops/$id/menu': typeof AuthenticatedShopsIdMenuRoute
+  '/loyalty/programs/$id': typeof AuthenticatedLoyaltyProgramsIdLazyRoute
   '/settings/financial/cash-drawers': typeof AuthenticatedSettingsFinancialCashDrawersLazyRoute
   '/settings/financial/payment-methods': typeof AuthenticatedSettingsFinancialPaymentMethodsLazyRoute
   '/ops/session/': typeof AuthenticatedOpsSessionIndexRoute
@@ -659,6 +671,7 @@ export interface FileRoutesByTo {
   '/inventory/stock': typeof AuthenticatedInventoryStockRouteRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/growth/customers': typeof AuthenticatedGrowthCustomersRoute
+  '/loyalty/programs': typeof AuthenticatedLoyaltyProgramsRouteWithChildren
   '/menu/products': typeof AuthenticatedMenuProductsRoute
   '/operations/orders': typeof AuthenticatedOperationsOrdersRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -668,8 +681,6 @@ export interface FileRoutesByTo {
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/printers': typeof AuthenticatedSettingsPrintersRoute
   '/growth/announcements': typeof AuthenticatedGrowthAnnouncementsLazyRoute
-  '/growth/loyalty': typeof AuthenticatedGrowthLoyaltyLazyRoute
-  '/growth/membership': typeof AuthenticatedGrowthMembershipLazyRoute
   '/growth/promotions': typeof AuthenticatedGrowthPromotionsLazyRoute
   '/growth/vouchers': typeof AuthenticatedGrowthVouchersLazyRoute
   '/hq/overview': typeof AuthenticatedHqOverviewLazyRoute
@@ -695,7 +706,9 @@ export interface FileRoutesByTo {
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
   '/operations': typeof AuthenticatedOperationsIndexLazyRoute
+  '/loyalty/programs/create': typeof AuthenticatedLoyaltyProgramsCreateRoute
   '/shops/$id/menu': typeof AuthenticatedShopsIdMenuRoute
+  '/loyalty/programs/$id': typeof AuthenticatedLoyaltyProgramsIdLazyRoute
   '/settings/financial/cash-drawers': typeof AuthenticatedSettingsFinancialCashDrawersLazyRoute
   '/settings/financial/payment-methods': typeof AuthenticatedSettingsFinancialPaymentMethodsLazyRoute
   '/ops/session': typeof AuthenticatedOpsSessionIndexRoute
@@ -725,6 +738,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/financial': typeof AuthenticatedSettingsFinancialRouteRouteWithChildren
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/growth/customers': typeof AuthenticatedGrowthCustomersRoute
+  '/_authenticated/loyalty/programs': typeof AuthenticatedLoyaltyProgramsRouteWithChildren
   '/_authenticated/menu/products': typeof AuthenticatedMenuProductsRoute
   '/_authenticated/operations/orders': typeof AuthenticatedOperationsOrdersRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -734,8 +748,6 @@ export interface FileRoutesById {
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/settings/printers': typeof AuthenticatedSettingsPrintersRoute
   '/_authenticated/growth/announcements': typeof AuthenticatedGrowthAnnouncementsLazyRoute
-  '/_authenticated/growth/loyalty': typeof AuthenticatedGrowthLoyaltyLazyRoute
-  '/_authenticated/growth/membership': typeof AuthenticatedGrowthMembershipLazyRoute
   '/_authenticated/growth/promotions': typeof AuthenticatedGrowthPromotionsLazyRoute
   '/_authenticated/growth/vouchers': typeof AuthenticatedGrowthVouchersLazyRoute
   '/_authenticated/hq/overview': typeof AuthenticatedHqOverviewLazyRoute
@@ -761,7 +773,9 @@ export interface FileRoutesById {
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
   '/_authenticated/operations/': typeof AuthenticatedOperationsIndexLazyRoute
+  '/_authenticated/loyalty/programs/create': typeof AuthenticatedLoyaltyProgramsCreateRoute
   '/_authenticated/shops/$id/menu': typeof AuthenticatedShopsIdMenuRoute
+  '/_authenticated/loyalty/programs/$id': typeof AuthenticatedLoyaltyProgramsIdLazyRoute
   '/_authenticated/settings/financial/cash-drawers': typeof AuthenticatedSettingsFinancialCashDrawersLazyRoute
   '/_authenticated/settings/financial/payment-methods': typeof AuthenticatedSettingsFinancialPaymentMethodsLazyRoute
   '/_authenticated/ops/session/': typeof AuthenticatedOpsSessionIndexRoute
@@ -791,6 +805,7 @@ export interface FileRouteTypes {
     | '/settings/financial'
     | '/errors/$error'
     | '/growth/customers'
+    | '/loyalty/programs'
     | '/menu/products'
     | '/operations/orders'
     | '/settings/account'
@@ -800,8 +815,6 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/settings/printers'
     | '/growth/announcements'
-    | '/growth/loyalty'
-    | '/growth/membership'
     | '/growth/promotions'
     | '/growth/vouchers'
     | '/hq/overview'
@@ -827,7 +840,9 @@ export interface FileRouteTypes {
     | '/tasks/'
     | '/users/'
     | '/operations/'
+    | '/loyalty/programs/create'
     | '/shops/$id/menu'
+    | '/loyalty/programs/$id'
     | '/settings/financial/cash-drawers'
     | '/settings/financial/payment-methods'
     | '/ops/session/'
@@ -851,6 +866,7 @@ export interface FileRouteTypes {
     | '/inventory/stock'
     | '/errors/$error'
     | '/growth/customers'
+    | '/loyalty/programs'
     | '/menu/products'
     | '/operations/orders'
     | '/settings/account'
@@ -860,8 +876,6 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/settings/printers'
     | '/growth/announcements'
-    | '/growth/loyalty'
-    | '/growth/membership'
     | '/growth/promotions'
     | '/growth/vouchers'
     | '/hq/overview'
@@ -887,7 +901,9 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/users'
     | '/operations'
+    | '/loyalty/programs/create'
     | '/shops/$id/menu'
+    | '/loyalty/programs/$id'
     | '/settings/financial/cash-drawers'
     | '/settings/financial/payment-methods'
     | '/ops/session'
@@ -916,6 +932,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/financial'
     | '/_authenticated/errors/$error'
     | '/_authenticated/growth/customers'
+    | '/_authenticated/loyalty/programs'
     | '/_authenticated/menu/products'
     | '/_authenticated/operations/orders'
     | '/_authenticated/settings/account'
@@ -925,8 +942,6 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/notifications'
     | '/_authenticated/settings/printers'
     | '/_authenticated/growth/announcements'
-    | '/_authenticated/growth/loyalty'
-    | '/_authenticated/growth/membership'
     | '/_authenticated/growth/promotions'
     | '/_authenticated/growth/vouchers'
     | '/_authenticated/hq/overview'
@@ -952,7 +967,9 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks/'
     | '/_authenticated/users/'
     | '/_authenticated/operations/'
+    | '/_authenticated/loyalty/programs/create'
     | '/_authenticated/shops/$id/menu'
+    | '/_authenticated/loyalty/programs/$id'
     | '/_authenticated/settings/financial/cash-drawers'
     | '/_authenticated/settings/financial/payment-methods'
     | '/_authenticated/ops/session/'
@@ -1251,20 +1268,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGrowthPromotionsLazyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/growth/membership': {
-      id: '/_authenticated/growth/membership'
-      path: '/growth/membership'
-      fullPath: '/growth/membership'
-      preLoaderRoute: typeof AuthenticatedGrowthMembershipLazyRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/growth/loyalty': {
-      id: '/_authenticated/growth/loyalty'
-      path: '/growth/loyalty'
-      fullPath: '/growth/loyalty'
-      preLoaderRoute: typeof AuthenticatedGrowthLoyaltyLazyRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/growth/announcements': {
       id: '/_authenticated/growth/announcements'
       path: '/growth/announcements'
@@ -1326,6 +1329,13 @@ declare module '@tanstack/react-router' {
       path: '/menu/products'
       fullPath: '/menu/products'
       preLoaderRoute: typeof AuthenticatedMenuProductsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/loyalty/programs': {
+      id: '/_authenticated/loyalty/programs'
+      path: '/loyalty/programs'
+      fullPath: '/loyalty/programs'
+      preLoaderRoute: typeof AuthenticatedLoyaltyProgramsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/growth/customers': {
@@ -1405,12 +1415,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsFinancialCashDrawersLazyRouteImport
       parentRoute: typeof AuthenticatedSettingsFinancialRouteRoute
     }
+    '/_authenticated/loyalty/programs/$id': {
+      id: '/_authenticated/loyalty/programs/$id'
+      path: '/$id'
+      fullPath: '/loyalty/programs/$id'
+      preLoaderRoute: typeof AuthenticatedLoyaltyProgramsIdLazyRouteImport
+      parentRoute: typeof AuthenticatedLoyaltyProgramsRoute
+    }
     '/_authenticated/shops/$id/menu': {
       id: '/_authenticated/shops/$id/menu'
       path: '/shops/$id/menu'
       fullPath: '/shops/$id/menu'
       preLoaderRoute: typeof AuthenticatedShopsIdMenuRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/loyalty/programs/create': {
+      id: '/_authenticated/loyalty/programs/create'
+      path: '/create'
+      fullPath: '/loyalty/programs/create'
+      preLoaderRoute: typeof AuthenticatedLoyaltyProgramsCreateRouteImport
+      parentRoute: typeof AuthenticatedLoyaltyProgramsRoute
     }
     '/_authenticated/shops/$id/inventory/logs': {
       id: '/_authenticated/shops/$id/inventory/logs'
@@ -1519,6 +1543,24 @@ const AuthenticatedOpsSessionRouteRouteWithChildren =
     AuthenticatedOpsSessionRouteRouteChildren,
   )
 
+interface AuthenticatedLoyaltyProgramsRouteChildren {
+  AuthenticatedLoyaltyProgramsCreateRoute: typeof AuthenticatedLoyaltyProgramsCreateRoute
+  AuthenticatedLoyaltyProgramsIdLazyRoute: typeof AuthenticatedLoyaltyProgramsIdLazyRoute
+}
+
+const AuthenticatedLoyaltyProgramsRouteChildren: AuthenticatedLoyaltyProgramsRouteChildren =
+  {
+    AuthenticatedLoyaltyProgramsCreateRoute:
+      AuthenticatedLoyaltyProgramsCreateRoute,
+    AuthenticatedLoyaltyProgramsIdLazyRoute:
+      AuthenticatedLoyaltyProgramsIdLazyRoute,
+  }
+
+const AuthenticatedLoyaltyProgramsRouteWithChildren =
+  AuthenticatedLoyaltyProgramsRoute._addFileChildren(
+    AuthenticatedLoyaltyProgramsRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedInventoryRouteRoute: typeof AuthenticatedInventoryRouteRouteWithChildren
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
@@ -1526,11 +1568,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOpsSessionRouteRoute: typeof AuthenticatedOpsSessionRouteRouteWithChildren
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedGrowthCustomersRoute: typeof AuthenticatedGrowthCustomersRoute
+  AuthenticatedLoyaltyProgramsRoute: typeof AuthenticatedLoyaltyProgramsRouteWithChildren
   AuthenticatedMenuProductsRoute: typeof AuthenticatedMenuProductsRoute
   AuthenticatedOperationsOrdersRoute: typeof AuthenticatedOperationsOrdersRoute
   AuthenticatedGrowthAnnouncementsLazyRoute: typeof AuthenticatedGrowthAnnouncementsLazyRoute
-  AuthenticatedGrowthLoyaltyLazyRoute: typeof AuthenticatedGrowthLoyaltyLazyRoute
-  AuthenticatedGrowthMembershipLazyRoute: typeof AuthenticatedGrowthMembershipLazyRoute
   AuthenticatedGrowthPromotionsLazyRoute: typeof AuthenticatedGrowthPromotionsLazyRoute
   AuthenticatedGrowthVouchersLazyRoute: typeof AuthenticatedGrowthVouchersLazyRoute
   AuthenticatedHqOverviewLazyRoute: typeof AuthenticatedHqOverviewLazyRoute
@@ -1563,13 +1604,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedOpsSessionRouteRouteWithChildren,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedGrowthCustomersRoute: AuthenticatedGrowthCustomersRoute,
+  AuthenticatedLoyaltyProgramsRoute:
+    AuthenticatedLoyaltyProgramsRouteWithChildren,
   AuthenticatedMenuProductsRoute: AuthenticatedMenuProductsRoute,
   AuthenticatedOperationsOrdersRoute: AuthenticatedOperationsOrdersRoute,
   AuthenticatedGrowthAnnouncementsLazyRoute:
     AuthenticatedGrowthAnnouncementsLazyRoute,
-  AuthenticatedGrowthLoyaltyLazyRoute: AuthenticatedGrowthLoyaltyLazyRoute,
-  AuthenticatedGrowthMembershipLazyRoute:
-    AuthenticatedGrowthMembershipLazyRoute,
   AuthenticatedGrowthPromotionsLazyRoute:
     AuthenticatedGrowthPromotionsLazyRoute,
   AuthenticatedGrowthVouchersLazyRoute: AuthenticatedGrowthVouchersLazyRoute,
