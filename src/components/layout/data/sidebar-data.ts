@@ -1,6 +1,7 @@
 import {
   Activity,
   Coffee,
+  Gift,
   LayoutDashboard,
   Megaphone,
   Package,
@@ -88,6 +89,7 @@ export const sidebarData: SidebarData = {
             { title: 'Customers (CRM)', url: '/growth/customers' },
             { title: 'Promotions', url: '/growth/promotions' },
             { title: 'Vouchers', url: '/growth/vouchers' },
+            { title: 'Loyalty Programs', url: '/loyalty/programs', icon: Gift },
             { title: 'Reviews', url: '/growth/reviews' },
           ],
         },
