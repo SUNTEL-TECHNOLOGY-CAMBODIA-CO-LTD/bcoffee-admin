@@ -13,7 +13,8 @@ export interface HqKpiData {
     discountBleedPct: number
   }
   acquisition: {
-    newSignups: number
+    totalUsers: number
+    newUsersThisWeek: number
   }
   revenueTrend: {
     date: string

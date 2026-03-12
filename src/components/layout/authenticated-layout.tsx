@@ -12,6 +12,7 @@ import { ProtectedRoute } from '@/components/layout/protected-route'
 import { PrinterStatusIndicator } from '@/components/printer-status-indicator'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
+import { CommandMenu } from '@/components/command-menu'
 import { SkipToMain } from '@/components/skip-to-main'
 import { ThemeSwitch } from '@/components/theme-switch'
 
@@ -34,6 +35,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   return (
     <ProtectedRoute>
       <SearchProvider>
+        <CommandMenu />
         <LayoutProvider>
           <SidebarProvider defaultOpen={defaultOpen}>
             <SkipToMain />
