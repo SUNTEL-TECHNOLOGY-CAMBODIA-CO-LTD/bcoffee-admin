@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react'
 import { type CreateOrderItemDto, type Product } from '@/types/api'
+import { type Promotion } from '@/types/growth'
 import {
   Plus,
   Search,
@@ -9,6 +11,8 @@ import {
   Utensils,
   Bike,
   Check,
+  Trash2,
+  Ticket,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -18,6 +22,7 @@ import { useCustomers } from '@/hooks/queries/use-customers'
 import { useCreateOrder } from '@/hooks/queries/use-orders'
 import { useShopFulfillmentMethods } from '@/hooks/queries/use-shops'
 import { useAppStore } from '@/hooks/use-app-store'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
@@ -29,6 +34,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Sheet,
   SheetContent,
@@ -39,6 +45,11 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { type Category } from '@/features/menu/data/schema'
+import {
+  applySmartPromotion,
+  type AppliedDiscount,
+} from '../utils/promotion-utils'
+import { PromotionSelectionModal } from './promotion-selection-modal'
 
 interface CartItem extends CreateOrderItemDto {
   name: string
@@ -71,6 +82,9 @@ export function ManualOrderPanel() {
   const [activeCategoryId, setActiveCategoryId] = useState<string>('all')
   const [customerName, setCustomerName] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
+  const [orderDiscounts, setOrderDiscounts] = useState<AppliedDiscount[]>([])
+  const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false)
+  const [isPromotionModalOpen, setIsPromotionModalOpen] = useState(false)
 
   // Queries
   const { data: customersData } = useCustomers({
@@ -160,11 +174,52 @@ export function ManualOrderPanel() {
 
     setCartItems((prev) => [...prev, newItem])
     setSelectedProduct(null)
-    toast.success(`${selectedProduct.name.en} added`)
+    // toast.success(`${selectedProduct.name.en} added`)
   }
 
   const handleRemoveItem = (tempId: string) => {
     setCartItems((prev) => prev.filter((i) => i.tempId !== tempId))
+  }
+
+  const handleAddDiscount = (discount: {
+    reason: string
+    amount: number
+    type: 'FIXED' | 'PERCENTAGE'
+  }) => {
+    const appliedAmount =
+      discount.type === 'FIXED'
+        ? discount.amount
+        : Math.floor(totalAmount * (discount.amount / 100) * 100) / 100
+
+    const newDiscount = {
+      ...discount,
+      id: crypto.randomUUID(),
+      appliedAmount,
+    }
+
+    setOrderDiscounts([newDiscount])
+    setIsDiscountModalOpen(false)
+    // toast.success('Discount applied (replaced existing)')
+  }
+
+  const handleRemoveDiscount = (id: string) => {
+    setOrderDiscounts((prev) => prev.filter((d) => d.id !== id))
+    // toast.success('Discount removed')
+  }
+
+  const handleApplyPromotion = (promo: Promotion) => {
+    // Check if subtotal is enough or other rules (simplified for now)
+    const itemPrices = cartItems.map((i) => i.unitPrice)
+    const discountData = applySmartPromotion(promo, totalAmount, itemPrices)
+
+    const newDiscount: AppliedDiscount = {
+      ...discountData,
+      id: crypto.randomUUID(),
+    }
+
+    setOrderDiscounts([newDiscount])
+    setIsPromotionModalOpen(false)
+    // toast.success(`${discountData.reason} applied (replaced existing)`)
   }
 
   const handleCommit = () => {
@@ -186,13 +241,31 @@ export function ManualOrderPanel() {
       )
     }
 
+    // Separate discounts: PRODUCT scope goes into items, CART scope stays top-level
+    const topLevelDiscounts = derivedDiscounts.filter(
+      (d) => d.scope === 'CART' || !d.scope
+    )
+    const productDiscounts = derivedDiscounts.filter(
+      (d) => d.scope === 'PRODUCT'
+    )
+
     createOrder(
       {
         shopId,
         userId: isGuest ? null : selectedCustomer?.id,
         guestInfo: isGuest ? { name: 'Guest Walk-in' } : undefined,
         items: cartItems.map(
-          ({ tempId, name, imageUrl, displayOptions, ...item }) => item
+          ({ tempId, name, imageUrl, displayOptions, ...item }) => {
+            const isDiscounted = tempId === discountedItemTempId
+            return {
+              ...item,
+              itemDiscounts: isDiscounted
+                ? productDiscounts.map(
+                    ({ id, appliedAmount, scope, ...rest }) => rest
+                  )
+                : undefined,
+            }
+          }
         ),
         fulfillmentMethodId: method.id,
         status: 'CONFIRMED', // Initial status required by spec
@@ -201,10 +274,13 @@ export function ManualOrderPanel() {
         customerName: isGuest && customerName ? customerName : undefined,
         customerPhone: isGuest && customerPhone ? customerPhone : undefined,
         assignToSelf: true, // Auto-assign to current staff
+        orderDiscounts: topLevelDiscounts.map(
+          ({ id, appliedAmount, scope, ...rest }) => rest
+        ),
       },
       {
         onSuccess: () => {
-          toast.success('Order committed to KDS')
+          // toast.success('Order committed to KDS')
           setOpen(false)
           setCartItems([])
           setIsGuest(true)
@@ -212,6 +288,7 @@ export function ManualOrderPanel() {
           setSearchQuery('')
           setCustomerName('')
           setCustomerPhone('')
+          setOrderDiscounts([])
         },
         onError: (err: any) => {
           const detail = err.response?.data?.message || 'Failed to commit order'
@@ -225,6 +302,41 @@ export function ManualOrderPanel() {
     (acc, item) => acc + item.unitPrice * item.quantity,
     0
   )
+
+  const derivedDiscounts = orderDiscounts.map((discount) => {
+    let appliedAmount = 0
+    const isProductScope = discount.scope === 'PRODUCT'
+    const baseAmount = isProductScope
+      ? Math.max(0, ...cartItems.map((i) => i.unitPrice))
+      : totalAmount
+
+    if (discount.type === 'PERCENTAGE') {
+      const discountAmount =
+        Math.floor(baseAmount * (discount.amount / 100) * 100) / 100
+      appliedAmount = discount.maxDiscountAmount
+        ? Math.min(discountAmount, discount.maxDiscountAmount)
+        : discountAmount
+    } else {
+      appliedAmount = Math.min(discount.amount, baseAmount)
+    }
+    return { ...discount, appliedAmount }
+  })
+
+  const totalDiscounts = derivedDiscounts.reduce(
+    (acc, d) => acc + d.appliedAmount,
+    0
+  )
+  const totalPayable = Math.max(0, totalAmount - totalDiscounts)
+
+  const productScopeDiscount = derivedDiscounts.find(
+    (d) => d.scope === 'PRODUCT'
+  )
+  let discountedItemTempId: string | null = null
+  if (productScopeDiscount && cartItems.length > 0) {
+    const maxPrice = Math.max(...cartItems.map((i) => i.unitPrice))
+    discountedItemTempId =
+      cartItems.find((i) => i.unitPrice === maxPrice)?.tempId || null
+  }
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -537,10 +649,27 @@ export function ManualOrderPanel() {
                       </div>
                       <div className='min-w-0 flex-1'>
                         <div className='mb-0.5 flex items-center justify-between'>
-                          <span className='max-w-[140px] truncate text-[11px] font-bold text-foreground'>
-                            {item.name}
-                          </span>
-                          <span className='text-[11px] font-bold text-primary'>
+                          <div className='flex items-center gap-2 overflow-hidden'>
+                            <span className='max-w-[140px] truncate text-[11px] font-bold text-foreground'>
+                              {item.name}
+                            </span>
+                            {item.tempId === discountedItemTempId && (
+                              <Badge
+                                variant='secondary'
+                                className='h-3.5 border-primary/20 bg-primary/10 px-1 text-[8px] font-bold tracking-tighter text-primary uppercase'
+                              >
+                                Promo
+                              </Badge>
+                            )}
+                          </div>
+                          <span
+                            className={cn(
+                              'text-[11px] font-bold',
+                              item.tempId === discountedItemTempId
+                                ? 'text-primary'
+                                : 'text-foreground'
+                            )}
+                          >
                             {formatCurrency(item.unitPrice * item.quantity)}
                           </span>
                         </div>
@@ -574,12 +703,52 @@ export function ManualOrderPanel() {
                   <span>Subtotal</span>
                   <span>{formatCurrency(totalAmount)}</span>
                 </div>
+
+                <div className='flex items-center gap-3 py-2'>
+                  {/* <button
+                    onClick={() => setIsDiscountModalOpen(true)}
+                    className='text-[10px] font-bold text-primary hover:underline'
+                  >
+                    + Add Discount
+                  </button>
+                  <span className='text-[10px] text-muted-foreground'>|</span> */}
+                  <button
+                    onClick={() => setIsPromotionModalOpen(true)}
+                    className='flex items-center gap-1 text-[10px] font-bold text-primary hover:underline'
+                  >
+                    <Ticket className='h-3 w-3' />
+                    Apply Promotion
+                  </button>
+                </div>
+
+                {derivedDiscounts.map((discount) => (
+                  <div
+                    key={discount.id}
+                    className='group flex animate-in items-center justify-between text-[11px] font-semibold text-destructive fade-in slide-in-from-top-1'
+                  >
+                    <div className='flex items-center gap-2'>
+                      <button
+                        onClick={() => handleRemoveDiscount(discount.id)}
+                        className='opacity-0 transition-opacity group-hover:opacity-100'
+                      >
+                        <Trash2 className='h-3 w-3' />
+                      </button>
+                      <span>
+                        Discount: {discount.reason}{' '}
+                        {discount.type === 'PERCENTAGE' &&
+                          `(${discount.amount}%)`}
+                      </span>
+                    </div>
+                    <span>-{formatCurrency(discount.appliedAmount)}</span>
+                  </div>
+                ))}
+
                 <div className='flex items-center justify-between border-t border-dashed pt-4'>
                   <span className='text-[10px] font-bold tracking-widest text-muted-foreground uppercase'>
                     Total Payable
                   </span>
                   <span className='font-mono text-2xl font-bold tracking-tight text-primary'>
-                    {formatCurrency(totalAmount)}
+                    {formatCurrency(totalPayable)}
                   </span>
                 </div>
               </div>
@@ -610,102 +779,104 @@ export function ManualOrderPanel() {
                 {selectedProduct?.name.en}
               </DialogTitle>
             </DialogHeader>
-            <div className='grid gap-6 py-4'>
-              {/* Variants (Price Groups) */}
-              {selectedProduct?.price?.choices && (
-                <div className='space-y-3'>
-                  <Label className='text-[10px] font-bold tracking-widest text-muted-foreground uppercase'>
-                    Selection
-                  </Label>
-                  <div className='grid grid-cols-2 gap-2'>
-                    {selectedProduct.price.choices.map((choice) => {
-                      const id = choice.id || choice.sku
-                      const isSelected = selectedVariantId === id
-                      return (
-                        <button
-                          key={id}
-                          className={cn(
-                            'flex items-center justify-between rounded-lg border-2 px-4 py-3 text-left transition-all',
-                            isSelected
-                              ? 'border-primary bg-primary/5 text-primary'
-                              : 'border-muted hover:border-muted-foreground/30'
-                          )}
-                          onClick={() => setSelectedVariantId(id)}
-                        >
-                          <div className='flex flex-col'>
-                            <span className='text-xs font-bold'>
-                              {choice.name.en}
-                            </span>
-                            <span className='text-[10px] opacity-70'>
-                              {formatCurrency(
-                                typeof choice.price === 'string'
-                                  ? parseFloat(choice.price)
-                                  : choice.price
-                              )}
-                            </span>
-                          </div>
-                          {isSelected && <Check className='h-4 w-4' />}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Modifiers */}
-              {selectedProduct?.optionGroups?.map((group) => (
-                <div key={group.id} className='space-y-3'>
-                  <Label className='text-[10px] font-bold tracking-widest text-muted-foreground uppercase'>
-                    {group.name.en}{' '}
-                    {group.minSelect > 0 && (
-                      <span className='text-destructive'>*</span>
-                    )}
-                  </Label>
-                  <div className='grid grid-cols-2 gap-2'>
-                    {group.choices?.map((choice) => {
-                      const isSelected =
-                        selectedModifiers[group.id] === choice.id
-                      return (
-                        <button
-                          key={choice.id}
-                          className={cn(
-                            'flex items-center justify-between rounded-lg border-2 px-4 py-3 text-left transition-all',
-                            isSelected
-                              ? 'border-primary bg-primary/5 text-primary'
-                              : 'border-muted hover:border-muted-foreground/30'
-                          )}
-                          onClick={() =>
-                            setSelectedModifiers((prev) => ({
-                              ...prev,
-                              [group.id]: choice.id,
-                            }))
-                          }
-                        >
-                          <div className='flex flex-col'>
-                            <span className='text-xs font-bold'>
-                              {choice.name.en}
-                            </span>
-                            {(typeof choice.price === 'string'
-                              ? parseFloat(choice.price)
-                              : choice.price) > 0 && (
+            <ScrollArea className='max-h-[60vh] px-1'>
+              <div className='grid gap-6 py-4'>
+                {/* Variants (Price Groups) */}
+                {selectedProduct?.price?.choices && (
+                  <div className='space-y-3'>
+                    <Label className='text-[10px] font-bold tracking-widest text-muted-foreground uppercase'>
+                      Selection
+                    </Label>
+                    <div className='grid grid-cols-2 gap-2'>
+                      {selectedProduct.price.choices.map((choice) => {
+                        const id = choice.id || choice.sku
+                        const isSelected = selectedVariantId === id
+                        return (
+                          <button
+                            key={id}
+                            className={cn(
+                              'flex items-center justify-between rounded-lg border-2 px-4 py-3 text-left transition-all',
+                              isSelected
+                                ? 'border-primary bg-primary/5 text-primary'
+                                : 'border-muted hover:border-muted-foreground/30'
+                            )}
+                            onClick={() => setSelectedVariantId(id)}
+                          >
+                            <div className='flex flex-col'>
+                              <span className='text-xs font-bold'>
+                                {choice.name.en}
+                              </span>
                               <span className='text-[10px] opacity-70'>
-                                +
                                 {formatCurrency(
                                   typeof choice.price === 'string'
                                     ? parseFloat(choice.price)
                                     : choice.price
                                 )}
                               </span>
-                            )}
-                          </div>
-                          {isSelected && <Check className='h-4 w-4' />}
-                        </button>
-                      )
-                    })}
+                            </div>
+                            {isSelected && <Check className='h-4 w-4' />}
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                )}
+
+                {/* Modifiers */}
+                {selectedProduct?.optionGroups?.map((group) => (
+                  <div key={group.id} className='space-y-3'>
+                    <Label className='text-[10px] font-bold tracking-widest text-muted-foreground uppercase'>
+                      {group.name.en}{' '}
+                      {group.minSelect > 0 && (
+                        <span className='text-destructive'>*</span>
+                      )}
+                    </Label>
+                    <div className='grid grid-cols-2 gap-2'>
+                      {group.choices?.map((choice) => {
+                        const isSelected =
+                          selectedModifiers[group.id] === choice.id
+                        return (
+                          <button
+                            key={choice.id}
+                            className={cn(
+                              'flex items-center justify-between rounded-lg border-2 px-4 py-3 text-left transition-all',
+                              isSelected
+                                ? 'border-primary bg-primary/5 text-primary'
+                                : 'border-muted hover:border-muted-foreground/30'
+                            )}
+                            onClick={() =>
+                              setSelectedModifiers((prev) => ({
+                                ...prev,
+                                [group.id]: choice.id,
+                              }))
+                            }
+                          >
+                            <div className='flex flex-col'>
+                              <span className='text-xs font-bold'>
+                                {choice.name.en}
+                              </span>
+                              {(typeof choice.price === 'string'
+                                ? parseFloat(choice.price)
+                                : choice.price) > 0 && (
+                                <span className='text-[10px] opacity-70'>
+                                  +
+                                  {formatCurrency(
+                                    typeof choice.price === 'string'
+                                      ? parseFloat(choice.price)
+                                      : choice.price
+                                  )}
+                                </span>
+                              )}
+                            </div>
+                            {isSelected && <Check className='h-4 w-4' />}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
             <DialogFooter>
               <Button
                 className='h-12 w-full font-bold tracking-widest uppercase'
@@ -717,6 +888,120 @@ export function ManualOrderPanel() {
           </DialogContent>
         </Dialog>
       </SheetContent>
+
+      <AddDiscountModal
+        open={isDiscountModalOpen}
+        onOpenChange={setIsDiscountModalOpen}
+        onConfirm={handleAddDiscount}
+      />
+
+      <PromotionSelectionModal
+        open={isPromotionModalOpen}
+        onOpenChange={setIsPromotionModalOpen}
+        onSelect={handleApplyPromotion}
+      />
     </Sheet>
+  )
+}
+
+function AddDiscountModal({
+  open,
+  onOpenChange,
+  onConfirm,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onConfirm: (discount: {
+    reason: string
+    amount: number
+    type: 'FIXED' | 'PERCENTAGE'
+  }) => void
+}) {
+  const [reason, setReason] = useState('')
+  const [amount, setAmount] = useState('')
+  const [type, setType] = useState<'FIXED' | 'PERCENTAGE'>('FIXED')
+
+  const handleConfirm = () => {
+    if (!reason || !amount) return toast.error('Please fill all fields')
+    onConfirm({
+      reason,
+      amount: parseFloat(amount),
+      type,
+    })
+    setReason('')
+    setAmount('')
+    setType('FIXED')
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className='sm:max-w-md'>
+        <DialogHeader>
+          <DialogTitle className='text-base font-bold tracking-tight uppercase'>
+            Add Order Discount
+          </DialogTitle>
+        </DialogHeader>
+        <div className='grid gap-4 py-4'>
+          <div className='space-y-2'>
+            <Label className='text-[10px] font-bold tracking-widest text-muted-foreground uppercase'>
+              Discount Type
+            </Label>
+            <Tabs
+              value={type}
+              onValueChange={(v) => setType(v as 'FIXED' | 'PERCENTAGE')}
+              className='w-full'
+            >
+              <TabsList className='grid w-full grid-cols-2'>
+                <TabsTrigger value='FIXED' className='text-xs font-bold'>
+                  Fixed Amount
+                </TabsTrigger>
+                <TabsTrigger value='PERCENTAGE' className='text-xs font-bold'>
+                  Percentage (%)
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+          <div className='space-y-2'>
+            <Label
+              htmlFor='amount'
+              className='text-[10px] font-bold tracking-widest text-muted-foreground uppercase'
+            >
+              Amount {type === 'PERCENTAGE' ? '(%)' : '($)'}
+            </Label>
+            <Input
+              id='amount'
+              type='number'
+              placeholder='0.00'
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className='h-10 text-xs'
+            />
+          </div>
+          <div className='space-y-2'>
+            <Label
+              htmlFor='reason'
+              className='text-[10px] font-bold tracking-widest text-muted-foreground uppercase'
+            >
+              Reason
+            </Label>
+            <Input
+              id='reason'
+              placeholder='Promotion name, staff discount, etc.'
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className='h-10 text-xs'
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button
+            className='h-12 w-full font-bold tracking-widest uppercase'
+            onClick={handleConfirm}
+          >
+            Confirm Discount
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

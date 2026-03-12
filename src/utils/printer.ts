@@ -5,7 +5,7 @@ import {
   // generateReceiptBlobFromCanvas,
 } from '@/features/operations/_components/receipt-escpos-generator'
 
-export const printReceiptViaBluetooth = async (order: ReceiptProps) => {
+export const connectReceiptPrinter = async () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bluetooth = (navigator as any).bluetooth
 
@@ -17,18 +17,85 @@ export const printReceiptViaBluetooth = async (order: ReceiptProps) => {
   }
 
   try {
+    const device = await bluetooth.requestDevice({
+      filters: [
+        { services: ['000018f0-0000-1000-8000-00805f9b34fb'] }, // Common ESC/POS service
+        { namePrefix: 'XP' }, // Xprinter
+        { namePrefix: 'Printer' },
+      ],
+      optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'],
+    })
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(window as any).cachedPrinterDevice = device
+
+    device.addEventListener('gattserverdisconnected', () => {
+      // eslint-disable-next-line no-console
+      console.log('Printer disconnected')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(window as any).cachedPrinterDevice = null
+    })
+
+    if (device.gatt && !device.gatt.connected) {
+      await device.gatt.connect()
+    }
+    toast.success('Receipt printer connected successfully!')
+  } catch (error: unknown) {
+    const err = error as Error
+    if (err?.message && !err.message.includes('User cancelled')) {
+      toast.error(`Print Error: ${err.message}`)
+    }
+  }
+}
+
+export const printReceiptViaBluetooth = async (orders: ReceiptProps[]) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const bluetooth = (navigator as any).bluetooth
+
+  if (!bluetooth) {
+    toast.error(
+      window.isSecureContext
+        ? 'Bluetooth is not supported. On iOS, please use the Bluefy or WebBLE app.'
+        : 'Bluetooth requires HTTPS. Please open the app via the production URL.'
+    )
+    return
+  }
+
+  try {
     let device = window.cachedPrinterDevice as any
 
-    if (!device || !device.gatt.connected) {
-      device = await bluetooth.requestDevice({
-        filters: [
-          { services: ['000018f0-0000-1000-8000-00805f9b34fb'] }, // Common ESC/POS service
-          { namePrefix: 'XP' }, // Xprinter
-          { namePrefix: 'Printer' },
-        ],
-        optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'],
-      })
+    if (!device || !device.gatt?.connected) {
+      // Attempt to find it from already permitted devices first (desktop Chrome only)
+      if (bluetooth.getDevices) {
+        const devices = await bluetooth.getDevices()
+        const found = devices.find((d: any) =>
+          ['XP-58', 'XP-80', 'XP', 'Printer'].some((prefix) =>
+            d.name?.startsWith(prefix)
+          )
+        )
+        if (found) {
+          try {
+            if (!found.gatt?.connected) {
+              await found.gatt.connect()
+            }
+            device = found
+          } catch {
+            // Failed to auto-reconnect, fall through to request a new device
+          }
+        }
+      }
+
+      // If still no device, prompt the user
+      if (!device) {
+        device = await bluetooth.requestDevice({
+          filters: [
+            { services: ['000018f0-0000-1000-8000-00805f9b34fb'] }, // Common ESC/POS service
+            { namePrefix: 'XP' }, // Xprinter
+            { namePrefix: 'Printer' },
+          ],
+          optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'],
+        })
+      }
 
       // Cache the device on the window object so we can reuse it
       window.cachedPrinterDevice = device
@@ -55,7 +122,18 @@ export const printReceiptViaBluetooth = async (order: ReceiptProps) => {
     )
 
     // 2. Generate raw text ESC/POS commands
-    const receiptBytes = generateReceiptBlob(order)
+    const receiptBytesList = orders.map((o) => generateReceiptBlob(o))
+
+    const totalLength = receiptBytesList.reduce(
+      (acc, curr) => acc + curr.length,
+      0
+    )
+    const receiptBytes = new Uint8Array(totalLength)
+    let offset = 0
+    for (const bytes of receiptBytesList) {
+      receiptBytes.set(bytes, offset)
+      offset += bytes.length
+    }
 
     // 3. Write chunks (Image data is large, so use small chunks to avoid MTU limits)
     // We must use extremely conservative chunk sizes (64 bytes) and forced 20ms delays.

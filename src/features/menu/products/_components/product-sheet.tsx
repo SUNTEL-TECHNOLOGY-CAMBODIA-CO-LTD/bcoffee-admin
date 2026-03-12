@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useMemo } from 'react'
 import { type z } from 'zod'
 import {
@@ -256,7 +257,7 @@ export function ProductSheet({
 }: ProductSheetProps) {
   const { data: categories } = useCategories()
   const { data: optionGroups } = useOptionGroups()
-  const { data: ingredientsData } = useIngredients()
+  const { data: ingredientsData } = useIngredients({ limit: 1000 })
   const ingredients = useMemo(
     () =>
       (Array.isArray(ingredientsData)

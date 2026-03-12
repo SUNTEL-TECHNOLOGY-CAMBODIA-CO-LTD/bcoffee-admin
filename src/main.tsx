@@ -8,15 +8,21 @@ import {
 } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { toast } from 'sonner'
+import { registerSW } from 'virtual:pwa-register'
 import { useAuthStore } from '@/stores/auth-store'
 import { handleServerError } from '@/lib/handle-server-error'
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
 import { ThemeProvider } from './context/theme-provider'
+import { useAppVersion } from './hooks/use-app-version'
+import { Toaster } from '@/components/ui/sonner'
+import { VersionCheckIndicator } from '@/components/version-check-indicator'
 // Generated Routes
 import { routeTree } from './routeTree.gen'
 // Styles
 import './styles/index.css'
+
+registerSW({ immediate: true })
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -87,20 +93,35 @@ declare module '@tanstack/react-router' {
   }
 }
 
+// Helper to silently run the version polling hook
+// eslint-disable-next-line react-refresh/only-export-components
+const AppVersionChecker = ({ children }: { children: React.ReactNode }) => {
+  const { secondsUntilCheck } = useAppVersion()
+  return (
+    <>
+      {children}
+      <VersionCheckIndicator secondsUntilCheck={secondsUntilCheck} />
+    </>
+  )
+}
+
 // Render the app
 const rootElement = document.getElementById('root')!
 if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement)
   root.render(
     <StrictMode>
+      <Toaster />
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <FontProvider>
-            <DirectionProvider>
-              <RouterProvider router={router} />
-            </DirectionProvider>
-          </FontProvider>
-        </ThemeProvider>
+        <AppVersionChecker>
+          <ThemeProvider>
+            <FontProvider>
+              <DirectionProvider>
+                <RouterProvider router={router} />
+              </DirectionProvider>
+            </FontProvider>
+          </ThemeProvider>
+        </AppVersionChecker>
       </QueryClientProvider>
     </StrictMode>
   )

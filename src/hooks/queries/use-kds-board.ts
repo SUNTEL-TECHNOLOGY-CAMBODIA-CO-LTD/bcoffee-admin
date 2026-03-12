@@ -4,6 +4,7 @@ import { getKdsOrders } from '@/services/ops'
 import { type OrderStatus } from '@/types/api'
 import { type KdsBoardState, type KdsOrder } from '@/types/kds'
 import { io } from 'socket.io-client'
+import { playNewOrderSound } from '@/utils/audio'
 
 export const KDS_BOARD_KEYS = {
   all: ['kds-board'] as const,
@@ -31,12 +32,18 @@ export function useKdsBoard(
   useEffect(() => {
     if (!shopId) return
 
+    // Derive the base server URL by stripping /api/v1 path from the API URL
+    // Socket.IO connects to the server root, not the REST API path
+    const socketBaseUrl =
+      import.meta.env.VITE_API_URL?.replace(/\/api\/v\d+$/, '') ?? ''
+
     // Connect to the specific namespace and send shopId as query
-    const socket = io(`${import.meta.env.VITE_API_URL}/kds`, {
+
+    const socket = io(`${socketBaseUrl}/kds`, {
       query: {
         shopId,
       },
-      transports: ['websocket'],
+      transports: ['polling', 'websocket'],
     })
 
     socket.on('connect', () => {
@@ -44,8 +51,20 @@ export function useKdsBoard(
       console.log('Connected to KDS Real-time Gateway for Shop:', shopId)
     })
 
+    socket.on('connect_error', (err) => {
+      // eslint-disable-next-line no-console
+      console.error(
+        '[KDS Socket] Connection error:',
+        err.message,
+        '| URL:',
+        `${socketBaseUrl}/kds`
+      )
+    })
+
     // Listen for new orders
     socket.on('order.created', (newOrder: KdsOrder) => {
+      console.log('work', newOrder)
+      playNewOrderSound()
       queryClient.setQueryData<KdsBoardState>(
         KDS_BOARD_KEYS.shop(shopId),
         (oldData) => {

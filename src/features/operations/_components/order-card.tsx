@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getBadges } from '@/services/badges'
-import { type OrderStatus } from '@/types/api'
+import { OrderStatus } from '@/types/api'
 import { type KdsOrder, type KdsOrderOption } from '@/types/kds'
 import {
   Tag,
@@ -47,21 +47,26 @@ export function OrderCard({ order }: OrderCardProps) {
   const handleStatusChange = async (newStatus: OrderStatus) => {
     try {
       await updateStatus({ id: order.id, status: newStatus })
+      if (newStatus === OrderStatus.CONFIRMED) {
+        await handlePrintReceipt(2)
+        await handlePrintLabels()
+      }
     } catch (_e) {
       // Error is handled by the mutation
     }
   }
 
-  const handlePrintReceipt = async () => {
+  const handlePrintReceipt = async (counter: number) => {
     setIsPrintingReceipt(true)
     try {
-      await printReceiptViaBluetooth({
+      const orders = Array.from({ length: counter }, () => ({
         invoiceCode: order.invoiceCode,
         createdAt: order.createdAt,
         fulfillmentCategory: order.fulfillmentCategory,
         queueNumber: order.queueNumber,
         subtotal: order.subtotal,
         total: order.grandTotal,
+        discount: order.discountTotal,
         paymentMethodName:
           typeof order.paymentMethodName === 'string'
             ? order.paymentMethodName
@@ -80,7 +85,9 @@ export function OrderCard({ order }: OrderCardProps) {
           })),
           notes: item.instructions,
         })),
-      })
+      }))
+      console.log({ orders })
+      await printReceiptViaBluetooth(orders)
     } finally {
       setIsPrintingReceipt(false)
     }
@@ -91,10 +98,18 @@ export function OrderCard({ order }: OrderCardProps) {
     try {
       for (const item of order.items) {
         await printLabelViaBluetooth({
-          drinkName: item.productName as string,
+          drinkName:
+            typeof item.productName === 'string'
+              ? item.productName
+              : item.productName?.en || '',
           note: item.instructions ?? undefined,
-          orderCode: `YOK-${order.invoiceCode}`,
+          orderCode: `YOK-${order.queueNumber}`,
           quantity: item.quantity,
+          options: item.options?.map((opt) =>
+            typeof opt.optionName === 'string'
+              ? opt.optionName
+              : opt.optionName?.en || ''
+          ),
         })
       }
     } finally {
@@ -275,7 +290,7 @@ export function OrderCard({ order }: OrderCardProps) {
             variant='outline'
             size='xs'
             className='h-8 flex-1 text-[11px]'
-            onClick={handlePrintReceipt}
+            onClick={() => handlePrintReceipt(1)}
             disabled={isPrintingReceipt}
           >
             <Printer className='mr-1 h-3 w-3' />

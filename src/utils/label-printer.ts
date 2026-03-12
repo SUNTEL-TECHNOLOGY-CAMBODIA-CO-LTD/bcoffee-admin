@@ -17,9 +17,37 @@ export interface LabelData {
   note?: string // e.g. "No ice"
   orderCode: string // e.g. "YOK-0012"
   quantity?: number // e.g. 2 (for printing multiple copies)
+  options?: string[] // e.g. ["Iced", "Less Sugar"]
 }
 
 // --- TSPL Generator ---
+
+const wrapText = (text: string, maxLength: number): string[] => {
+  const words = text.split(' ')
+  const lines: string[] = []
+  let currentLine = ''
+
+  for (const word of words) {
+    if ((currentLine + (currentLine ? ' ' : '') + word).length <= maxLength) {
+      currentLine = currentLine ? `${currentLine} ${word}` : word
+    } else {
+      if (currentLine) lines.push(currentLine)
+      if (word.length > maxLength) {
+        let remaining = word
+        while (remaining.length > maxLength) {
+          lines.push(remaining.slice(0, maxLength))
+          remaining = remaining.slice(maxLength)
+        }
+        currentLine = remaining
+      } else {
+        currentLine = word
+      }
+    }
+  }
+  if (currentLine) lines.push(currentLine)
+
+  return lines
+}
 
 /**
  * Generates a TSPL command string for a 40mm x 25mm label.
@@ -32,8 +60,7 @@ export const generateLabelTSPL = (label: LabelData): string => {
 
   // Truncate long names to fit the label width
   const drinkName = label.drinkName.slice(0, 20)
-  const variant = (label.variant ?? '').slice(0, 24)
-  const note = (label.note ?? '').slice(0, 24)
+  const note = label.note ?? ''
   const orderCode = label.orderCode.slice(0, 20)
 
   const lines: string[] = [
@@ -61,24 +88,37 @@ export const generateLabelTSPL = (label: LabelData): string => {
     // TEXT x, y, "font", rotation, x-scale, y-scale, "text"
     // Font "3" = built-in 14pt font (fits ~20 chars on 40mm)
     `TEXT 10, 10, "3", 0, 1, 1, "${drinkName}"`,
+
+    // Options — list them below the drink name
+    ...(label.options?.map((opt, index) => {
+      // Start options below the drink name (y=40) and stack them
+      const yPos = 40 + index * 25
+      // Use font "2" (10pt) for options
+      return `TEXT 9, ${yPos}, "2", 0, 0, 0, "${opt}"`
+    }) ?? []),
   ]
 
-  // Variant/Sugar level line (if present)
-  if (variant) {
-    lines.push(`TEXT 10, 60, "2", 0, 1, 1, "${variant}"`)
-  }
+  // // Variant/Sugar level line (if present)
+  // if (variant) {
+  //   lines.push(`TEXT 10, 60, "2", 0, 1, 1, "${variant}"`)
+  // }
 
   // Note line (if present)
   if (note) {
-    lines.push(`TEXT 10, 90, "2", 0, 1, 1, "* ${note}"`)
+    const wrappedNote = wrapText(note, 27)
+    wrappedNote.forEach((line, index) => {
+      const yPos = 90 + index * 27
+      const prefix = index === 0 ? '* ' : '  ' // auto indent
+      lines.push(`TEXT 10, ${yPos}, "1", 0, 1, 1, "${prefix}${line}"`)
+    })
   }
 
   // Horizontal divider line (x1, y1, x2, y2, thickness in dots)
-  lines.push('BAR 0, 118, 320, 2')
+  lines.push('BAR 0, 160, 320, 2')
 
   // Order Code — small font at the bottom
   // Font "1" = smallest built-in font
-  lines.push(`TEXT 10, 125, "1", 0, 1, 1, "${orderCode}"`)
+  lines.push(`TEXT 10, 170, "2", 0, 1, 1, "${orderCode}"`)
 
   // Timestamp — right-aligned at the bottom
   const now = new Date()
@@ -87,7 +127,7 @@ export const generateLabelTSPL = (label: LabelData): string => {
     minute: '2-digit',
     hour12: true,
   })
-  lines.push(`TEXT 220, 125, "1", 0, 1, 1, "${time}"`)
+  lines.push(`TEXT 220, 170, "1", 0, 1, 1, "${time}"`)
 
   // 7. Print N copies
   lines.push(`PRINT ${copies}`)
@@ -97,6 +137,68 @@ export const generateLabelTSPL = (label: LabelData): string => {
 }
 
 // --- Bluetooth Sender ---
+
+export const connectLabelPrinter = async () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const bluetooth = (navigator as any).bluetooth
+
+  if (!bluetooth) {
+    toast.error(
+      'Bluetooth is not supported. On iOS, please use the Bluefy or WebBLE app.'
+    )
+    return
+  }
+
+  try {
+    const device = await bluetooth.requestDevice({
+      filters: [
+        { namePrefix: 'XP' },
+        { namePrefix: 'XP-410' },
+        { namePrefix: 'Printer' },
+      ],
+      // SPP service for classic BT bridged via BLE
+      optionalServices: [
+        '000018f0-0000-1000-8000-00805f9b34fb',
+        '00001101-0000-1000-8000-00805f9b34fb',
+      ],
+    })
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(window as any).cachedLabelPrinterDevice = device
+
+    device.addEventListener('gattserverdisconnected', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(window as any).cachedLabelPrinterDevice = null
+    })
+
+    if (device.gatt && !device.gatt.connected) {
+      await device.gatt.connect()
+    }
+
+    // Stabilize the GATT connection by actually requesting the primary SPP service
+    if (device.gatt && device.gatt.connected) {
+      try {
+        const server = device.gatt
+        try {
+          // ESC/POS Service UUID first
+          await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb')
+        } catch {
+          // Fallback to SPP
+          await server.getPrimaryService('00001101-0000-1000-8000-00805f9b34fb')
+        }
+      } catch (err) {
+        console.warn('Failed to pre-fetch service', err)
+      }
+    }
+
+    toast.success('Label printer connected successfully!')
+  } catch (error: unknown) {
+    const err = error as Error
+    if (err?.message && !err.message.includes('User cancelled')) {
+      toast.error(`Label Print Error: ${err.message}`)
+    }
+  }
+}
 
 /**
  * Connects to the XP-410B label printer via Bluetooth and prints a label.
@@ -122,18 +224,42 @@ export const printLabelViaBluetooth = async (label: LabelData) => {
     let device = window.cachedLabelPrinterDevice as any
 
     if (!device || !device.gatt?.connected) {
-      device = await bluetooth.requestDevice({
-        filters: [
-          { namePrefix: 'XP' },
-          { namePrefix: 'XP-410' },
-          { namePrefix: 'Printer' },
-        ],
-        // SPP service for classic BT bridged via BLE
-        optionalServices: [
-          '000018f0-0000-1000-8000-00805f9b34fb',
-          '00001101-0000-1000-8000-00805f9b34fb',
-        ],
-      })
+      // Attempt to find it from already permitted devices first
+      if (bluetooth.getDevices) {
+        const devices = await bluetooth.getDevices()
+        const found = devices.find((d: any) =>
+          ['XP-410', 'XP-410B', 'XP-D4601B', 'XP-', 'Printer'].some((prefix) =>
+            d.name?.startsWith(prefix)
+          )
+        )
+        if (found) {
+          // getDevices() returns disconnected references — must explicitly connect
+          try {
+            if (!found.gatt?.connected) {
+              await found.gatt.connect()
+            }
+            device = found
+          } catch {
+            // Failed to auto-reconnect, fall through to request a new device
+          }
+        }
+      }
+
+      // If still no device, prompt the user
+      if (!device) {
+        device = await bluetooth.requestDevice({
+          filters: [
+            { namePrefix: 'XP' },
+            { namePrefix: 'XP-410' },
+            { namePrefix: 'Printer' },
+          ],
+          // SPP service for classic BT bridged via BLE
+          optionalServices: [
+            '000018f0-0000-1000-8000-00805f9b34fb',
+            '00001101-0000-1000-8000-00805f9b34fb',
+          ],
+        })
+      }
 
       window.cachedLabelPrinterDevice = device
 
@@ -146,9 +272,25 @@ export const printLabelViaBluetooth = async (label: LabelData) => {
       throw new Error('Cannot connect to GATT on label printer.')
 
     // Connect if not already connected
-    const server = device.gatt.connected
-      ? device.gatt
-      : await device.gatt.connect()
+    let server = device.gatt.connected ? device.gatt : null
+    if (!server) {
+      server = await device.gatt.connect()
+    }
+
+    // Stabilize the GATT connection by actually requesting the primary SPP service
+    if (device.gatt && device.gatt.connected) {
+      try {
+        try {
+          // ESC/POS Service UUID first
+          await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb')
+        } catch {
+          // Fallback to SPP
+          await server.getPrimaryService('00001101-0000-1000-8000-00805f9b34fb')
+        }
+      } catch (err) {
+        console.warn('Failed to pre-fetch service in auto-connect', err)
+      }
+    }
 
     // Try the common ESC/POS service first, then fall back to SPP
     let characteristic
@@ -181,7 +323,7 @@ export const printLabelViaBluetooth = async (label: LabelData) => {
       await new Promise((resolve) => setTimeout(resolve, 20))
     }
 
-    toast.success(`Label printed: ${label.drinkName}`)
+    // toast.success(`Label printed: ${label.drinkName}`)
   } catch (error: unknown) {
     const err = error as Error
     toast.error(

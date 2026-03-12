@@ -14,9 +14,16 @@ export const getVouchers = async (
       uniqueCode: v.uniqueCode,
       promotionName: v.promotion?.name || 'Unknown',
       userPhone: v.user?.phone || 'Guest',
-      isRedeemed: v.isRedeemed,
+      status: v.status,
+      isRedeemed: v.status === 'USED',
       createdAt: new Date(v.createdAt).toLocaleDateString(),
     })),
-    meta,
+    meta: {
+      totalItems: meta?.totalItems ?? 0,
+      itemCount: meta?.itemCount ?? 0,
+      itemsPerPage: meta?.itemsPerPage ?? 10,
+      totalPages: meta?.totalPages ?? 1,
+      currentPage: meta?.currentPage ?? 1,
+    },
   }
 }

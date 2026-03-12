@@ -38,6 +38,7 @@ export interface Promotion {
   validFrom?: string
   validUntil?: string
   budgetLimitAmount?: number
+  maxDiscountAmount?: number // Cap for percentage discounts
   totalAmountBurned?: number // Usage tracking — may be absent from API
   isActive?: never // Removed from API
   status: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED' | null
@@ -81,6 +82,7 @@ export interface Voucher {
   uniqueCode: string // The specific code user types
   promotionName: string // Joined from Promotion
   userPhone: string // Joined from User
+  status: 'ISSUED' | 'USED' | 'EXPIRED' | 'VOIDED' | string
   isRedeemed: boolean
   createdAt: string
 }

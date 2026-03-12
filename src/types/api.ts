@@ -38,6 +38,7 @@ export enum OptionType {
   VARIANT = 'VARIANT',
   MODIFIER = 'MODIFIER',
   ADDON = 'ADDON',
+  COMBO = 'COMBO',
 }
 
 export enum InventoryAdjustmentReason {
@@ -227,6 +228,7 @@ export interface CreateOptionChoiceDto {
   priceModifier?: number // Deprecated? The spec says priceModifier, but UI uses price.
   price?: number
   isDefault?: boolean
+  linkedProductId?: string | null
 }
 
 export type UpdateOptionChoiceDto = Partial<CreateOptionChoiceDto>
@@ -476,6 +478,12 @@ export interface CreateOrderRequest {
   scheduledFor?: string
   assignToSelf?: boolean
   staffId?: string
+  orderDiscounts?: {
+    reason: string
+    amount: number
+    type: 'FIXED' | 'PERCENTAGE'
+    promotionId?: string
+  }[]
 }
 
 export type ReceiptProps = {
@@ -487,8 +495,43 @@ export type ReceiptProps = {
 
   // Billing & Payment info
   subtotal?: number
-  discount?: number
+  discount?: string
   total?: number
   paymentMethodName?: string
   paymentStatus?: string
 }
+// Payment Methods
+export enum PaymentCategory {
+  CASH = 'CASH',
+  QR = 'QR',
+  CARD = 'CARD',
+  WALLET = 'WALLET',
+  BANK_TRANSFER = 'BANK_TRANSFER',
+  MANUAL_TRANSFER = 'MANUAL_TRANSFER',
+}
+
+export interface PaymentMethod {
+  id: string
+  businessId: string
+  slug: string
+  name: LocalizedText
+  description?: LocalizedText
+  logoUrl?: string
+  category: PaymentCategory
+  isDigital: boolean
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreatePaymentMethodDto {
+  slug: string
+  name: LocalizedText
+  description?: LocalizedText
+  logoUrl?: string
+  category: PaymentCategory
+  isDigital: boolean
+  isActive: boolean
+}
+
+export type UpdatePaymentMethodDto = Partial<CreatePaymentMethodDto>

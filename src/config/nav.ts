@@ -4,6 +4,7 @@ import {
   Beef,
   Building,
   Coffee,
+  LayoutDashboard,
   Package,
   Ruler,
   Settings,
@@ -13,11 +14,11 @@ import {
 } from 'lucide-react'
 
 export const getStoreNav = (shopId?: string | null) => [
-  // {
-  //   title: 'Dashboard',
-  //   url: '/',
-  //   icon: LayoutDashboard,
-  // },
+  {
+    title: 'Daily Report',
+    url: '/',
+    icon: LayoutDashboard,
+  },
   {
     title: 'Live Ops',
     url: '/operations',
@@ -123,6 +124,7 @@ export const hqNav = [
     icon: Banknote,
     items: [
       { title: 'Tax & Surcharges', url: '/settings/financial' },
+      { title: 'Payment Methods', url: '/settings/financial/payment-methods' },
       { title: 'Cash Drawers', url: '/settings/financial/cash-drawers' },
     ],
   },
