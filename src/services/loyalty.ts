@@ -1,11 +1,58 @@
+import { apiClient } from '@/lib/api-client'
 import { type PaginationMeta } from '@/types/api'
 import { type Promotion, DiscountType } from '@/types/growth'
-import { apiClient } from '@/lib/api-client'
+import {
+  type CreateProgramDto,
+  type Program,
+} from '@/types/loyalty'
 import type {
   LoyaltySettings,
   MembershipTier,
   UserLoyaltyBalance,
 } from '@/features/growth/data/loyalty-schema'
+
+// --- New Program Service ---
+
+export const getPrograms = async (params?: {
+  page?: number
+  limit?: number
+  businessId?: string
+}): Promise<{
+  data: Program[]
+  meta?: PaginationMeta
+}> => {
+  const response = await apiClient.get('/admin/programs', { params })
+
+  return {
+    data: response.data?.data || [],
+    meta: response.data?.meta,
+  }
+}
+
+export const getProgram = async (id: string): Promise<Program> => {
+  const response = await apiClient.get(`/admin/programs/${id}`)
+  return response.data
+}
+
+export const createProgram = async (data: CreateProgramDto): Promise<Program> => {
+  const response = await apiClient.post('/admin/programs', data)
+  return response.data
+}
+
+export const updateProgram = async (args: {
+  id: string
+  data: Partial<CreateProgramDto>
+}): Promise<Program> => {
+  const { id, data } = args
+  const response = await apiClient.patch(`/admin/programs/${id}`, data)
+  return response.data
+}
+
+export const deleteProgram = async (id: string): Promise<void> => {
+  await apiClient.delete(`/admin/programs/${id}`)
+}
+
+// --- Legacy Loyalty Service (Keeping for compatibility until fully migrated) ---
 
 function mapPromotionToSettings(data: Promotion): LoyaltySettings {
   const loyaltyRule =
