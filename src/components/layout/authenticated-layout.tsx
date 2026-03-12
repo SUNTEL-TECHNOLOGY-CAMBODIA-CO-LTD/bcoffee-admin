@@ -57,6 +57,11 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
               <Header>
                 <Search />
                 <div className='ml-auto flex items-center space-x-4'>
+                  {import.meta.env.VITE_ENV === 'DEV' && (
+                    <span className='rounded border border-yellow-400 bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 dark:border-yellow-500 dark:bg-yellow-900/30 dark:text-yellow-400'>
+                      DEV
+                    </span>
+                  )}
                   <PrinterStatusIndicator />
                   <ThemeSwitch />
                   <ProfileDropdown />
